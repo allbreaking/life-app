@@ -50,10 +50,11 @@ assert(files.length >= 3, 'dist 缺少生产 HTML/CSS/JavaScript 产物，请先
 let gzipTotal = 0;
 let largestJs = 0;
 let largestCss = 0;
+let productionJavaScript = '';
 for (const path of files) {
   const content = readFileSync(path);
   gzipTotal += gzipSync(content).byteLength;
-  if (extname(path) === '.js') largestJs = Math.max(largestJs, content.byteLength);
+  if (extname(path) === '.js') { largestJs = Math.max(largestJs, content.byteLength); productionJavaScript += content.toString('utf8'); }
   if (extname(path) === '.css') largestCss = Math.max(largestCss, content.byteLength);
 }
 
@@ -61,5 +62,8 @@ const limits = { js: 350 * 1024, css: 25 * 1024, gzip: 110 * 1024 };
 assert(largestJs <= limits.js, `入口 JavaScript ${largestJs} B 超过 ${limits.js} B`);
 assert(largestCss <= limits.css, `CSS ${largestCss} B 超过 ${limits.css} B`);
 assert(gzipTotal <= limits.gzip, `HTML/CSS/JS gzip 总量 ${gzipTotal} B 超过 ${limits.gzip} B`);
+for (const fixtureMarker of ['贵州茅台', '科大讯飞', '客户环境部署报错修复', '鲜牛奶', '老王', 'Java/Kafka 深化', '大盘震荡，茅台', 'ChatGPT Plus', '买猫粮']) {
+  assert(!productionJavaScript.includes(fixtureMarker), `生产 JavaScript 包含演示数据：${fixtureMarker}`);
+}
 
 console.log(`发布审计通过：JS ${largestJs} B，CSS ${largestCss} B，HTML/CSS/JS gzip 总量 ${gzipTotal} B；版本、CSP、capability、identifier 与图标配置一致。`);

@@ -6,16 +6,16 @@ import { halfPositionReductionPrice, priceAlert, realizedProfitPercent, safetyDi
 type Watch = { id: string; code: string; name: string; target: number; safety: number; current: number; quoteAt?: string };
 type Position = { id: string; watchlistId: string; price: number; stop?: number; closePrice?: number; profitPercent?: number; closedAt?: string };
 type Review = { date: string; content: string };
-const initialWatch: Watch[] = [{ id: 'w1', code: '600519', name: '贵州茅台', target: 1680, safety: 1450, current: 1442 }, { id: 'w2', code: '002230', name: '科大讯飞', target: 40, safety: 34, current: 41.2 }];
+const initialWatch: Watch[] = import.meta.env.PROD ? [] : [{ id: 'w1', code: '600519', name: '贵州茅台', target: 1680, safety: 1450, current: 1442 }, { id: 'w2', code: '002230', name: '科大讯飞', target: 40, safety: 34, current: 41.2 }];
 const watchSchema = z.array(z.object({ id: z.string().min(1).max(100), code: z.string().regex(/^[A-Za-z0-9._-]{1,16}$/), name: z.string().min(1).max(100), target: z.number().positive(), safety: z.number().nonnegative(), current: z.number().nonnegative(), quoteAt: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/).optional() }).strict());
 const positionSchema = z.array(z.object({ id: z.string().min(1).max(100), watchlistId: z.string().min(1).max(100), price: z.number().positive(), stop: z.number().positive().optional(), closePrice: z.number().positive().optional(), profitPercent: z.number().optional(), closedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() }).strict().refine((position) => [position.closePrice, position.profitPercent, position.closedAt].every((value) => value === undefined) || [position.closePrice, position.profitPercent, position.closedAt].every((value) => value !== undefined), '清仓字段必须同时存在'));
 const reviewSchema = z.array(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), content: z.string().min(1).max(1000) }).strict());
-const sopSchema = z.string().min(1).max(500);
-const initialSop = '观察列表 → 到达安全价 → 纪律建仓 → 策略卖出/止损 → 每日复盘';
+const sopSchema = z.string().max(500);
+const initialSop = import.meta.env.PROD ? '' : '观察列表 → 到达安全价 → 纪律建仓 → 策略卖出/止损 → 每日复盘';
 
 /** Side effects: persists domain resources through typed IPC and requests fixed-host Sina A-share snapshots on add and during mainland trading windows. */
 export function Trade() {
-  const [watchlist, setWatchlist] = useDomainResource('trade.watchlist', watchSchema, initialWatch); const [positions, setPositions] = useDomainResource('trade.positions', positionSchema, [{ id: 'pos1', watchlistId: 'w2', price: 38.2 }] as Position[]); const [reviews, setReviews] = useDomainResource('trade.reviews', reviewSchema, [{ date: '2026-07-25', content: '大盘震荡，茅台触及安全价，暂不加仓观察量能' }] as Review[]); const [sop, setSop] = useDomainResource('trade.sop', sopSchema, initialSop); const [sopDraft, setSopDraft] = useState(initialSop); const [editingSop, setEditingSop] = useState(false); const [positionTab, setPositionTab] = useState<'active' | 'closed'>('active'); const [loadingQuote, setLoadingQuote] = useState(false); const [message, setMessage] = useState('');
+  const [watchlist, setWatchlist] = useDomainResource('trade.watchlist', watchSchema, initialWatch); const [positions, setPositions] = useDomainResource('trade.positions', positionSchema, (import.meta.env.PROD ? [] : [{ id: 'pos1', watchlistId: 'w2', price: 38.2 }]) as Position[]); const [reviews, setReviews] = useDomainResource('trade.reviews', reviewSchema, (import.meta.env.PROD ? [] : [{ date: '2026-07-25', content: '大盘震荡，茅台触及安全价，暂不加仓观察量能' }]) as Review[]); const [sop, setSop] = useDomainResource('trade.sop', sopSchema, initialSop); const [sopDraft, setSopDraft] = useState(initialSop); const [editingSop, setEditingSop] = useState(false); const [positionTab, setPositionTab] = useState<'active' | 'closed'>('active'); const [loadingQuote, setLoadingQuote] = useState(false); const [message, setMessage] = useState('');
   const watchCodes = watchlist.filter((item) => /^\d{6}$/.test(item.code)).map((item) => item.code).join(',');
   useEffect(() => {
     if (!watchCodes) return;

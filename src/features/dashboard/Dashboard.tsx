@@ -6,6 +6,8 @@ export function Dashboard({ scheduled, setScheduled }: { scheduled: ScheduledTas
   const todos = todayScheduledTasks(scheduled);
   const toggleTodo = (id: string) => setScheduled((items) => items.map((item) => item.id === id ? { ...item, completed: !item.completed } : item));
 
+  if (import.meta.env.PROD) return <div className="dashboard-view"><section className="card"><h2><span>▣ 今日待办</span></h2>{todos.length ? todos.map((todo) => <button className={todo.completed ? 'todo-row done' : 'todo-row'} key={todo.id} onClick={() => toggleTodo(todo.id)}><span className="todo-time">{todo.time}</span><span className="todo-check" aria-hidden="true">✓</span><span className="todo-title">{todo.title}</span></button>) : <p className="small">今日暂无待办</p>}</section></div>;
+
   return (
     <div className="dashboard-view">
       <section className="card north-star-card">

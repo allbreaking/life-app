@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import type { z } from 'zod';
 import { hasTauriRuntime, loadDomainResource, replaceDomainResource, type DomainResource } from './domainResource';
+import { runtimeInitialValue } from '../demoData';
 
 /** Side effects: in Tauri, loads normalized domain rows after mount and transactionally writes subsequent changes through typed IPC. */
 export function useDomainResource<T>(resource: DomainResource, schema: z.ZodType<T>, initialValue: T): [T, Dispatch<SetStateAction<T>>] {
-  const [value, setValue] = useState(initialValue);
+  const [value, setValue] = useState(() => runtimeInitialValue(resource, initialValue));
   const hydrated = useRef(false);
   const schemaRef = useRef(schema);
 

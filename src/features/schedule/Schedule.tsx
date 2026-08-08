@@ -8,12 +8,12 @@ import type { Dispatch, SetStateAction } from 'react';
 type View = 'day' | 'week' | 'month';
 type LifeSchedule = LifeTemplate & { id: string; title: string; time: string; label: string; editable: false };
 
-const initialPool: PoolTask[] = [
+const initialPool: PoolTask[] = import.meta.env.PROD ? [] : [
   { id: 'work-q1', title: '客户环境部署修复', module: 'work', quadrant: 'Q1' }, { id: 'work-q2', title: '交易观察列表安全价逻辑', module: 'work', quadrant: 'Q2' },
   { id: 'work-q3', title: '填报本月报销单', module: 'work', quadrant: 'Q3' }, { id: 'work-q4', title: '整理旧项目归档', module: 'work', quadrant: 'Q4' },
   { id: 'learn-1', title: '阅读《估值的艺术》第3章', module: 'learning' }, { id: 'item-1', title: '咖啡豆库存补充', module: 'items' }, { id: 'network-1', title: '老王生日礼物准备', module: 'network' },
 ];
-const initialLife: LifeSchedule[] = [
+const initialLife: LifeSchedule[] = import.meta.env.PROD ? [] : [
   { id: 'life-1', title: '晨间拉伸', time: '07:30', frequency: 'daily', label: '每天', editable: false },
   { id: 'life-2', title: '芭蕾课', time: '19:00', frequency: 'weekly', weekday: new Date().getDay(), label: '每周', editable: false },
 ];

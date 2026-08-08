@@ -59,6 +59,7 @@ src-tauri/
 - Tauri command：校验输入、开启事务、调用领域服务。
 - repository：只负责 SQL，不包含业务判断。
 - notification/market/backup adapter：显式外部副作用，可替换、可测试。
+- 演示 fixture 使用 `import.meta.env.PROD` 编译期分支；生产分支只提供符合 schema 的空集合/零值，构建器删除开发 fixture。`useDomainResource` 仅在存储无值时使用运行时初值，不覆盖已有 SQLite 数据。
 
 ## 错误模型
 

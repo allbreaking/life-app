@@ -60,3 +60,4 @@
 - `npm run release:verify` 检查入口 JS ≤ 350 KiB、CSS ≤ 25 KiB、HTML/CSS/JS gzip 总量 ≤ 110 KiB。
 - npm/Cargo/Tauri 版本一致，CSP、capability、identifier 与 bundle 图标通过静态审计。
 - 本机未签名 bundle 只用于安装冒烟；正式发布必须在受控环境完成签名、公证和签名验证。
+- 生产 JS 产物扫描典型 fixture 标识，不得包含开发环境的人物、股票、任务、物品和复盘样例。

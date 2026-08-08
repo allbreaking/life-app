@@ -9,7 +9,7 @@ const quadrantMeta: Record<Quadrant, { label: string; tone: string; badge?: stri
   Q1: { label: '重要且紧急', tone: 'q1', badge: '限2件' }, Q2: { label: '重要不紧急', tone: 'q2', badge: '黄金攻坚区' },
   Q3: { label: '紧急不重要', tone: 'q3' }, Q4: { label: '不紧急不重要', tone: 'q4', badge: '7天未动' },
 };
-const initialTasks: Record<Quadrant, Task[]> = {
+const initialTasks: Record<Quadrant, Task[]> = import.meta.env.PROD ? { Q1: [], Q2: [], Q3: [], Q4: [] } : {
   Q1: [{ id: 'q1-1', title: '客户环境部署报错修复' }, { id: 'q1-2', title: '日程排期引擎数据结构' }],
   Q2: [{ id: 'q2-1', title: '交易观察列表安全价逻辑 #LifeOS' }, { id: 'q2-2', title: '学习模块里程碑设计 #LifeOS' }],
   Q3: [{ id: 'q3-1', title: '填报本月报销单' }], Q4: [{ id: 'q4-1', title: '整理旧项目归档文件夹' }],
@@ -41,7 +41,7 @@ export function Work() {
 
   return (
     <div className="work-view">
-      <section className="card work-summary"><div><strong>高杠杆，低负荷</strong><p className="small">今日 Top3 从 Q1+Q2 中手动挑选 · 已选 {focusIds.length}/3 · 本周加班 6.5h / 15h</p></div><div className="progress"><div style={{ width: '43%' }} /></div></section>
+      <section className="card work-summary"><div><strong>高杠杆，低负荷</strong><p className="small">今日 Top3 从 Q1+Q2 中手动挑选 · 已选 {focusIds.length}/3{!import.meta.env.PROD && ' · 本周加班 6.5h / 15h'}</p></div>{!import.meta.env.PROD && <div className="progress"><div style={{ width: '43%' }} /></div>}</section>
       {message && <div className="status-message" role="status">{message}</div>}
       <div className="grid grid-2 quadrant-grid">
         {(Object.keys(quadrantMeta) as Quadrant[]).map((quadrant) => {
@@ -53,7 +53,7 @@ export function Work() {
         })}
       </div>
       <EodForm />
-      <section className="card"><h2><span>EOD 历史时间轴</span><span className="tag">可回顾</span></h2><div className="timeline"><EodItem date="2026-07-24 · 加班 1.5h" done="完成：SQLite 表结构设计" detail="明天：推进日程排期引擎 · 收获：Tauri IPC 传参用 JSON 字符串更稳定" /><EodItem date="2026-07-23 · 加班 0.5h" done="完成：四象限看板交互调整" detail="明天：SQLite 表结构设计 · 收获：SOP 约束应做数据库外键而非 UI 提示" /></div></section>
+      {!import.meta.env.PROD && <section className="card"><h2><span>EOD 历史时间轴</span><span className="tag">可回顾</span></h2><div className="timeline"><EodItem date="2026-07-24 · 加班 1.5h" done="完成：SQLite 表结构设计" detail="明天：推进日程排期引擎 · 收获：Tauri IPC 传参用 JSON 字符串更稳定" /><EodItem date="2026-07-23 · 加班 0.5h" done="完成：四象限看板交互调整" detail="明天：SQLite 表结构设计 · 收获：SOP 约束应做数据库外键而非 UI 提示" /></div></section>}
     </div>
   );
 }

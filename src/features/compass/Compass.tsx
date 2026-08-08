@@ -4,7 +4,7 @@ import { useDomainResource } from '../../shared/ipc/useDomainResource';
 
 type PrincipleKind = 'being' | 'doing';
 
-const initialPrinciples: Record<PrincipleKind, string[]> = {
+const initialPrinciples: Record<PrincipleKind, string[]> = import.meta.env.PROD ? { being: [], doing: [] } : {
   being: ['学习：结构化沉淀优于囤积闪念', '社交：真诚记录，不做关系量化', '爱好：主动挑选体验，拒绝被动刷手机'],
   doing: ['工作：今日焦点不超过 3 件', '投资：先观察列表，后纪律建仓', '财务：不因为便宜而囤货'],
 };
@@ -32,7 +32,7 @@ export function Compass() {
         <PrincipleColumn kind="being" title="Being" subtitle="社交 · 物品 · 学习 · 爱好" items={principles.being} open={openForm === 'being'} onToggle={() => setOpenForm(openForm === 'being' ? null : 'being')} onSubmit={addPrinciple} />
         <PrincipleColumn kind="doing" title="Doing" subtitle="工作 · 财务 · 投资 · 日程" items={principles.doing} open={openForm === 'doing'} onToggle={() => setOpenForm(openForm === 'doing' ? null : 'doing')} onSubmit={addPrinciple} />
       </div>
-      <section className="card">
+      {!import.meta.env.PROD && <section className="card">
         <h2><span>Life Changelog 个人演进日志</span><button className="add-button" aria-label="新增演进日志" disabled>＋</button></h2>
         <p className="small draft-note">正式写入将在领域服务接入后开放。</p>
         <div className="timeline">
@@ -40,7 +40,7 @@ export function Compass() {
           <TimelineItem meta="v2026.06 · 交租教训 · #投资">追高未设止损导致回撤，固化“先观察列表后建仓”硬性纪律</TimelineItem>
           <TimelineItem meta="v2026.05 · 认知重塑 · #社交">意识到断联倒计时会让关系变得功利，改为仅记录重要日期</TimelineItem>
         </div>
-      </section>
+      </section>}
     </div>
   );
 }

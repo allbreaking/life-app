@@ -6,7 +6,7 @@ DEV
 
 ## 当前节点
 
-INLINE EDITOR BORDERLESS STYLE / COMPLETE
+PRODUCTION EMPTY DATA / COMPLETE
 
 ## 计划
 
@@ -102,6 +102,9 @@ INLINE EDITOR BORDERLESS STYLE / COMPLETE
 - [x] INLINE EDITOR BORDERLESS STYLE SPEC：原地编辑控件移除常态边框，保留 `focus-visible` 可见焦点
 - [x] INLINE EDITOR BORDERLESS STYLE BUILD：统一投资 SOP、持仓价格与每日复盘原地编辑框样式
 - [x] INLINE EDITOR BORDERLESS STYLE VERIFY：组件样式断言、类型、前端测试、静态规格与生产构建通过
+- [x] PRODUCTION EMPTY DATA DESIGN：区分开发/测试 fixture 与生产空状态，保留已有 SQLite 用户数据
+- [x] PRODUCTION EMPTY DATA BUILD：九模块领域初值使用编译期生产分支，生产不渲染演示总览/时间线/财务卡片
+- [x] PRODUCTION EMPTY DATA VERIFY：41 项前端测试、类型、静态规格、生产构建与 fixture 产物扫描通过
 - [ ] P6-C2 RELEASE ENV：Developer ID 签名、公证、安装后权限冒烟、依赖漏洞审计与发布审批（需要真实凭据/联网环境）
 
 ## 当前校验
