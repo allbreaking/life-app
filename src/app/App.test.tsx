@@ -3,9 +3,11 @@ import { beforeEach, expect, test, vi } from 'vitest';
 import { App } from './App';
 
 let desktopAction: ((event: { payload: string }) => void) | undefined;
+let menuTodoComplete: ((event: { payload: string }) => void) | undefined;
 vi.mock('@tauri-apps/api/event', () => ({
-  listen: vi.fn((_name: string, handler: (event: { payload: string }) => void) => {
-    desktopAction = handler;
+  listen: vi.fn((name: string, handler: (event: { payload: string }) => void) => {
+    if (name === 'desktop-action') desktopAction = handler;
+    if (name === 'menu-todo-complete') menuTodoComplete = handler;
     return Promise.resolve(vi.fn());
   }),
 }));
@@ -27,12 +29,30 @@ test('handles native menu actions for quick capture and dashboard navigation', a
   Reflect.deleteProperty(window, '__TAURI_INTERNALS__');
 });
 
+test('marks the scheduled task complete through the menu bar task id', async () => {
+  Object.defineProperty(window, '__TAURI_INTERNALS__', {
+    configurable: true,
+    value: { invoke: vi.fn().mockResolvedValue(null) },
+  });
+  render(<App />);
+  await act(async () => menuTodoComplete?.({ payload: 'today-architecture' }));
+  expect(screen.getByText('#LifeOS 架构梳理').closest('button')).toHaveClass('done');
+  Reflect.deleteProperty(window, '__TAURI_INTERNALS__');
+});
+
 test('renders all nine module navigation entries', () => {
   render(<App />);
   expect(screen.getAllByRole('button', { current: false })).toBeTruthy();
   for (const name of ['今日总览', '人生地图', '工作', '日程', '财务', '物品', '社交', '投资', '学习']) {
     expect(screen.getByRole('button', { name })).toBeInTheDocument();
   }
+});
+
+test('keeps window chrome out of the app and exposes no quick capture button', () => {
+  render(<App />);
+  expect(document.querySelector('.system-bar')).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /快捷录入/ })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: '数据保护' })).toBeInTheDocument();
 });
 
 test('restores module selection and opens quick capture via Option+Space', () => {
@@ -45,9 +65,9 @@ test('restores module selection and opens quick capture via Option+Space', () =>
 
 test('keeps quick capture focus inside the modal and restores its opener', () => {
   render(<App />);
-  const opener = screen.getByRole('button', { name: /快捷录入 ⌥Space/ });
+  const opener = screen.getByRole('button', { name: '今日总览' });
   opener.focus();
-  fireEvent.click(opener);
+  fireEvent.keyDown(window, { altKey: true, code: 'Space' });
   const close = screen.getByRole('button', { name: '关闭快捷录入' });
   expect(close).toHaveFocus();
   fireEvent.keyDown(close, { key: 'Tab' });

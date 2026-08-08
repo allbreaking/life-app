@@ -2,13 +2,12 @@ import { useMemo, useState, type DragEvent, type FormEvent } from 'react';
 import { z } from 'zod';
 import { useDomainResource } from '../../shared/ipc/useDomainResource';
 import { lifeTemplateOccursOn, minutesToTime, snapToQuarterHour, type Frequency, type LifeTemplate } from './scheduleModel';
+import { poolTaskSchema, todayKey, type PoolTask, type ScheduledTask } from './scheduleState';
+import type { Dispatch, SetStateAction } from 'react';
 
 type View = 'day' | 'week' | 'month';
-type PoolTask = { id: string; title: string; module: 'work' | 'learning' | 'items' | 'network'; quadrant?: string };
-type ScheduledTask = PoolTask & { date: string; time: string; duration: number; editable: true };
 type LifeSchedule = LifeTemplate & { id: string; title: string; time: string; label: string; editable: false };
 
-const todayKey = () => new Date().toLocaleDateString('sv-SE');
 const initialPool: PoolTask[] = [
   { id: 'work-q1', title: '客户环境部署修复', module: 'work', quadrant: 'Q1' }, { id: 'work-q2', title: '交易观察列表安全价逻辑', module: 'work', quadrant: 'Q2' },
   { id: 'work-q3', title: '填报本月报销单', module: 'work', quadrant: 'Q3' }, { id: 'work-q4', title: '整理旧项目归档', module: 'work', quadrant: 'Q4' },
@@ -19,15 +18,12 @@ const initialLife: LifeSchedule[] = [
   { id: 'life-2', title: '芭蕾课', time: '19:00', frequency: 'weekly', weekday: new Date().getDay(), label: '每周', editable: false },
 ];
 const moduleNames = { work: '工作', learning: '学习', items: '物品', network: '社交' } as const;
-const poolTaskSchema = z.object({ id: z.string().min(1).max(100), title: z.string().min(1).max(200), module: z.enum(['work', 'learning', 'items', 'network']), quadrant: z.string().max(2).optional() }).strict();
-const scheduledTaskSchema = poolTaskSchema.extend({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), time: z.string().regex(/^\d{2}:\d{2}$/), duration: z.number().int().min(15).max(480), editable: z.literal(true) }).strict();
 const lifeScheduleSchema = z.object({ id: z.string().min(1).max(100), title: z.string().min(1).max(200), time: z.string().regex(/^\d{2}:\d{2}$/), frequency: z.enum(['daily', 'weekly', 'biweekly', 'monthly']), weekday: z.number().int().min(0).max(6).optional(), monthDay: z.number().int().min(1).max(31).optional(), anchorDate: z.string().optional(), label: z.string().max(20), editable: z.literal(false) }).strict();
 
 /** Side effects: persists scheduling and life-template changes through typed IPC to SQLite; view state remains local. */
-export function Schedule() {
+export function Schedule({ scheduled, setScheduled }: { scheduled: ScheduledTask[]; setScheduled: Dispatch<SetStateAction<ScheduledTask[]>> }) {
   const [view, setView] = useState<View>('day');
   const [pool, setPool] = useDomainResource('schedule.pool', z.array(poolTaskSchema), initialPool);
-  const [scheduled, setScheduled] = useDomainResource('schedule.scheduled', z.array(scheduledTaskSchema), [] as ScheduledTask[]);
   const [lifeSchedules, setLifeSchedules] = useDomainResource('schedule.lifeSchedules', z.array(lifeScheduleSchema), initialLife);
   const [previewDate, setPreviewDate] = useState(todayKey);
   const [message, setMessage] = useState('');
@@ -36,12 +32,12 @@ export function Schedule() {
   const scheduleTask = (id: string, minuteOffset = 9 * 60) => {
     const task = pool.find((item) => item.id === id); if (!task) return;
     setPool((items) => items.filter((item) => item.id !== id));
-    setScheduled((items) => [...items, { ...task, date: previewDate, time: minutesToTime(minuteOffset), duration: 60, editable: true }]);
+    setScheduled((items) => [...items, { ...task, date: previewDate, time: minutesToTime(minuteOffset), duration: 60, editable: true, completed: false }]);
     setMessage(`已临时排期到 ${previewDate} ${minutesToTime(minuteOffset)}`);
   };
   const unscheduleTask = (id: string) => {
     const task = scheduled.find((item) => item.id === id); if (!task) return;
-    const { date: _date, time: _time, duration: _duration, editable: _editable, ...poolTask } = task;
+    const { date: _date, time: _time, duration: _duration, editable: _editable, completed: _completed, ...poolTask } = task;
     setScheduled((items) => items.filter((item) => item.id !== id)); setPool((items) => [...items, poolTask]); setMessage('已撤销排期并还原到任务池');
   };
   const extendTask = (id: string) => {

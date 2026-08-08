@@ -27,6 +27,8 @@
 - `saveLifeTemplate`：新增或修改重复模板。
 - `deleteLifeTemplate`：软删除模板。
 - 生活模板投影 DTO 标记 `editable=false`，排期命令收到该 ID 时必须拒绝。
+- `syncMenuBarTodo(todo|null)`：仅接收校验后的稳定任务 ID、`HH:mm` 时间和最长 200 字标题，在 macOS 更新菜单栏短标题、完整菜单文本与当前完成目标；`null` 显示“今日完成”。副作用仅限系统菜单栏瞬时 UI，不写数据库、不发网络请求。
+- 菜单栏“标记完成”发送当前稳定任务 ID；React 按 ID 更新 `schedule.scheduled.completed`，既有领域资源命令负责事务持久化。
 
 ## FinanceService
 

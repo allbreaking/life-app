@@ -6,7 +6,7 @@ DEV
 
 ## 当前节点
 
-ALERT MOTION PARITY / COMPLETE
+SCHEDULE SINGLE SOURCE / COMPLETE
 
 ## 计划
 
@@ -45,6 +45,22 @@ ALERT MOTION PARITY / COMPLETE
 - [x] ALERT MOTION SPEC：定义跨模块告警呼吸动画与 reduced-motion 降级
 - [x] ALERT MOTION BUILD：恢复总览、财务、物品与投资告警的原型动画语义
 - [x] ALERT MOTION VERIFY：类型、29 项组件/单元测试、静态规格与生产构建通过（真实浏览器动画帧检查接口当前不可用）
+- [x] MACOS MENU BAR TODO SPEC：定义移除应用内伪系统栏、保留快捷键入口及 macOS 状态项副作用边界
+- [x] MACOS MENU BAR TODO PLAN：调整 React 壳层、Tauri 状态项与双端自动测试
+- [x] MACOS MENU BAR TODO BUILD：移除窗口内时间/快捷录入/待办，创建 macOS 菜单栏待办状态项
+- [x] MACOS MENU BAR TODO VERIFY：类型、30 项前端测试、14 项 Rust 测试、静态规格与生产构建通过
+- [x] MACOS MENU BAR TODO ACTION SPEC：短标题、完整菜单内容、白名单完成动作与持久化副作用边界
+- [x] MACOS MENU BAR TODO ACTION PLAN：扩展桌面动作、提升总览完成状态并覆盖双端测试
+- [x] MACOS MENU BAR TODO ACTION BUILD：菜单栏完整待办菜单与标记完成功能
+- [x] MACOS MENU BAR TODO ACTION VERIFY：类型、31 项前端测试、14 项 Rust 测试、静态规格与生产构建通过
+- [x] MACOS MENU BAR TODO ADVANCE SPEC：固定待办顺序、白名单索引动作与结束状态
+- [x] MACOS MENU BAR TODO ADVANCE PLAN：扩展桌面事件、菜单推进逻辑和双端测试
+- [x] MACOS MENU BAR TODO ADVANCE BUILD：完成后自动切换下一待办
+- [x] MACOS MENU BAR TODO ADVANCE VERIFY：类型、31 项前端测试、14 项 Rust 测试、静态规格与生产构建通过
+- [x] SCHEDULE SINGLE SOURCE DESIGN：日程任务作为总览与菜单栏唯一数据源，按稳定 ID 完成
+- [x] SCHEDULE SINGLE SOURCE PLAN：共享 schema、壳层状态、typed IPC、菜单事件与测试闭环
+- [x] SCHEDULE SINGLE SOURCE BUILD：移除硬编码待办和索引映射
+- [x] SCHEDULE SINGLE SOURCE VERIFY：类型、31 项前端测试、14 项 Rust 测试、静态规格与生产构建通过
 - [ ] P6-C2 RELEASE ENV：Developer ID 签名、公证、安装后权限冒烟、依赖漏洞审计与发布审批（需要真实凭据/联网环境）
 
 ## 当前校验

@@ -45,7 +45,8 @@ pub fn run() {
             commands::deliver_notification,
             commands::create_backup,
             commands::list_backups,
-            commands::restore_backup
+            commands::restore_backup,
+            desktop_shell::sync_menu_bar_todo
         ])
         .run(tauri::generate_context!())
         .expect("failed to run Life-OS");

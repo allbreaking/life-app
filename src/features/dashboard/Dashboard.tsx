@@ -1,24 +1,10 @@
-import { z } from 'zod';
-import { useDomainResource } from '../../shared/ipc/useDomainResource';
+import type { Dispatch, SetStateAction } from 'react';
+import { todayScheduledTasks, type ScheduledTask } from '../schedule/scheduleState';
 
-const initialTodos = [
-  { time: '09:30', title: '#LifeOS 架构梳理' },
-  { time: '14:00', title: '项目周例会' },
-  { time: '19:00', title: '芭蕾课' },
-];
-
-/** Side effects: persists todo completion indexes through typed IPC to SQLite. */
-export function Dashboard() {
-  const [completedIndexes, setCompletedIndexes] = useDomainResource('dashboard.completedTodoIndexes', z.array(z.number().int().min(0)), [] as number[]);
-  const completed = new Set(completedIndexes);
-
-  const toggleTodo = (index: number) => {
-    setCompletedIndexes((current) => {
-      const next = new Set(current);
-      if (next.has(index)) next.delete(index); else next.add(index);
-      return [...next];
-    });
-  };
+/** Side effects: invokes the provided scheduled-task setter. */
+export function Dashboard({ scheduled, setScheduled }: { scheduled: ScheduledTask[]; setScheduled: Dispatch<SetStateAction<ScheduledTask[]>> }) {
+  const todos = todayScheduledTasks(scheduled);
+  const toggleTodo = (id: string) => setScheduled((items) => items.map((item) => item.id === id ? { ...item, completed: !item.completed } : item));
 
   return (
     <div className="dashboard-view">
@@ -31,8 +17,8 @@ export function Dashboard() {
       <div className="grid grid-2">
         <section className="card">
           <h2><span>▣ 今日待办</span><span className="tag">默认展示3个未完成项</span></h2>
-          {initialTodos.map((todo, index) => (
-            <button className={completed.has(index) ? 'todo-row done' : 'todo-row'} key={todo.time} onClick={() => toggleTodo(index)}>
+          {todos.map((todo) => (
+            <button className={todo.completed ? 'todo-row done' : 'todo-row'} key={todo.id} onClick={() => toggleTodo(todo.id)}>
               <span className="todo-time">{todo.time}</span>
               <span className="todo-check" aria-hidden="true">✓</span>
               <span className="todo-title">{todo.title}</span>

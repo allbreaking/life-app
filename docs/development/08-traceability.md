@@ -19,6 +19,7 @@
 | L-02 | 领域工作区管理里程碑和任务 | milestone/task | 进度联动 E2E | P0 |
 | A-01 | 键盘跳转、可见焦点与模态焦点约束/恢复 | application UI | App 组件键盘测试 | P0 |
 | D-01 | 原生菜单打开快捷录入并返回总览 | desktop shell/application UI | Rust 菜单映射测试、App 桌面事件组件测试 | P1 |
+| D-02 | macOS 菜单栏展示下一待办，应用内移除伪系统栏与快捷录入按钮 | desktop shell/application UI | Rust 状态项标题测试、App 壳层组件测试 | P1 |
 | D-02 | 系统级 `Alt+Space` 打开快捷录入且注册失败可降级 | desktop shell | Rust 快捷键动作映射测试、完整构建 | P1 |
 | D-03 | 系统通知按实体、类型、发生时间去重且失败可重试 | notification service/delivery | Rust 输入校验、adapter 去重与失败重试测试 | P1 |
 | D-04 | SQLite 应用内一致性快照、校验后恢复与失败回滚 | backup service/application UI | Rust 快照/校验/回滚测试、typed IPC 与确认交互测试 | P1 |
