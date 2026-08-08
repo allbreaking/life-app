@@ -191,10 +191,95 @@ test('keeps social records factual without relationship scoring', () => {
 test('only offers watchlist instruments when creating a position', () => {
   render(<App />);
   fireEvent.click(screen.getByRole('button', { name: '投资' }));
-  const select = screen.getByRole('combobox', { name: '观察列表标的' });
-  expect(select).toHaveTextContent('600519 贵州茅台');
-  expect(select).toHaveTextContent('002230 科大讯飞');
-  expect(select.querySelectorAll('option')).toHaveLength(2);
+  expect(screen.getByText(/新浪行情 · 60 秒刷新/)).toBeInTheDocument();
+  expect(screen.queryByPlaceholderText('现价')).not.toBeInTheDocument();
+  expect(screen.queryByPlaceholderText('止损价')).not.toBeInTheDocument();
+  const trigger = screen.getByRole('button', { name: '观察列表标的' });
+  expect(trigger.parentElement).toHaveClass('trade-select');
+  expect(trigger).toHaveTextContent('600519 贵州茅台');
+  fireEvent.click(trigger);
+  const options = screen.getAllByRole('option');
+  expect(options).toHaveLength(2);
+  expect(options[0]).toHaveTextContent('600519贵州茅台');
+  expect(options[0]).toHaveAttribute('aria-selected', 'true');
+  fireEvent.keyDown(trigger, { key: 'ArrowDown' });
+  expect(trigger).toHaveTextContent('002230 科大讯飞');
+  expect(trigger.closest('form')?.querySelector('input[name="watchlistId"]')).toHaveValue('w2');
+  const positionRow = screen.getByText('¥42.40').closest('.position-row');
+  expect(positionRow).toHaveTextContent('+7.85%');
+  expect(positionRow).not.toHaveTextContent('¥41.20');
+  expect(positionRow).toHaveTextContent('+4.71%');
+  expect(positionRow).toHaveTextContent('+12.35%');
+
+  fireEvent.click(screen.getByRole('button', { name: '编辑 科大讯飞 建仓价' }));
+  const priceEditor = screen.getByRole('spinbutton', { name: '编辑 科大讯飞 建仓价' });
+  fireEvent.change(priceEditor, { target: { value: '40' } });
+  fireEvent.click(screen.getByRole('button', { name: '保存' }));
+  expect(positionRow).toHaveTextContent('¥40.00');
+  expect(positionRow).toHaveTextContent('+3.00%');
+  expect(positionRow).toHaveTextContent('+0.00%');
+  expect(positionRow).toHaveTextContent('+17.65%');
+  expect(positionRow).toHaveTextContent('¥46.00');
+  expect(screen.getByRole('status')).toHaveTextContent('建仓价已更新');
+
+  fireEvent.click(screen.getByRole('button', { name: '编辑 科大讯飞 建仓价' }));
+  fireEvent.change(screen.getByRole('spinbutton', { name: '编辑 科大讯飞 建仓价' }), { target: { value: '50' } });
+  fireEvent.click(screen.getByRole('button', { name: '取消' }));
+  expect(positionRow).toHaveTextContent('¥40.00');
+
+  fireEvent.click(screen.getByRole('button', { name: '清仓 科大讯飞' }));
+  const closePriceEditor = screen.getByRole('spinbutton', { name: '输入 科大讯飞 清仓价' });
+  fireEvent.change(closePriceEditor, { target: { value: '46' } });
+  fireEvent.click(screen.getByRole('button', { name: '确认' }));
+  expect(screen.getByRole('status')).toHaveTextContent('清仓记录已保存');
+  expect(screen.queryByRole('button', { name: '清仓 科大讯飞' })).not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('tab', { name: '已清仓' }));
+  const closedRow = screen.getByText('+15.00%').closest('.closed-position-row');
+  expect(closedRow).toHaveTextContent('002230 科大讯飞');
+  expect(closedRow).toHaveTextContent('¥40.00');
+  expect(closedRow).toHaveTextContent('¥46.00');
+});
+
+test('edits the investment SOP in place and supports save and cancel', () => {
+  render(<App />);
+  fireEvent.click(screen.getByRole('button', { name: '投资' }));
+  fireEvent.click(screen.getByRole('button', { name: '编辑投资 SOP' }));
+  const editor = screen.getByRole('textbox', { name: '在当前位置修改投资纪律' });
+  expect(editor.closest('.trade-sop')).toBeInTheDocument();
+  fireEvent.change(editor, { target: { value: '  先看风险\n再做决策  ' } });
+  fireEvent.click(screen.getByRole('button', { name: '保存' }));
+  const displayedSop = screen.getByText((_, element) => element?.textContent === '先看风险\n再做决策');
+  expect(displayedSop).toHaveClass('trade-sop-content');
+  expect(displayedSop).toHaveTextContent('先看风险 再做决策');
+  expect(screen.getByRole('status')).toHaveTextContent('投资 SOP 已保存');
+
+  fireEvent.click(screen.getByRole('button', { name: '编辑投资 SOP' }));
+  fireEvent.change(screen.getByRole('textbox', { name: '在当前位置修改投资纪律' }), { target: { value: '不应保存' } });
+  fireEvent.click(screen.getByRole('button', { name: '取消' }));
+  expect(screen.getByText((_, element) => element?.textContent === '先看风险\n再做决策')).toBeInTheDocument();
+  expect(screen.queryByDisplayValue('不应保存')).not.toBeInTheDocument();
+});
+
+test('edits and deletes daily investment reviews in place', () => {
+  render(<App />);
+  fireEvent.click(screen.getByRole('button', { name: '投资' }));
+  fireEvent.click(screen.getByRole('button', { name: '编辑 2026-07-25 每日复盘' }));
+  const editor = screen.getByRole('textbox', { name: '编辑 2026-07-25 每日复盘' });
+  expect(editor.closest('.trade-review-item')).toBeInTheDocument();
+  fireEvent.change(editor, { target: { value: '  复盘后继续观察量能  ' } });
+  fireEvent.click(screen.getByRole('button', { name: '保存' }));
+  expect(screen.getByText('复盘后继续观察量能')).toBeInTheDocument();
+  expect(screen.getByRole('status')).toHaveTextContent('复盘已更新');
+
+  fireEvent.click(screen.getByRole('button', { name: '编辑 2026-07-25 每日复盘' }));
+  fireEvent.change(screen.getByRole('textbox', { name: '编辑 2026-07-25 每日复盘' }), { target: { value: '不应保存' } });
+  fireEvent.click(screen.getByRole('button', { name: '取消' }));
+  expect(screen.getByText('复盘后继续观察量能')).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: '删除 2026-07-25 每日复盘' }));
+  expect(screen.queryByText('复盘后继续观察量能')).not.toBeInTheDocument();
+  expect(screen.getByRole('status')).toHaveTextContent('复盘已删除');
 });
 
 test('opens a full learning domain workspace and derives milestone progress', () => {

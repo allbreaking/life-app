@@ -26,6 +26,7 @@ const RESOURCES: &[(&str, &str, &str)] = &[
     ("trade.watchlist", "trade", "watchlist"),
     ("trade.positions", "trade", "positions"),
     ("trade.reviews", "trade", "reviews"),
+    ("trade.sop", "trade", "sop"),
     ("learning.domains", "learning", "domains"),
 ];
 const MAX_VALUE_BYTES: usize = 256 * 1024;
@@ -224,6 +225,13 @@ mod tests {
         assert_eq!(
             service.load("finance.budgetCents").unwrap(),
             Some(json!(300000))
+        );
+        service
+            .replace("trade.sop", &json!("先看风险，再做决策"), "r4")
+            .unwrap();
+        assert_eq!(
+            service.load("trade.sop").unwrap(),
+            Some(json!("先看风险，再做决策"))
         );
     }
 

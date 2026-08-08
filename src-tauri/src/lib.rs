@@ -4,6 +4,7 @@ mod db;
 mod desktop_shell;
 mod domain_resource;
 mod error;
+mod market_quote;
 mod notification;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -29,6 +30,7 @@ pub fn run() {
                 connection.clone(),
                 notification::SystemNotificationAdapter::new(app.handle().clone()),
             ));
+            app.manage(market_quote::MarketQuoteService::new()?);
             app.manage(backup::BackupService::new(
                 connection,
                 data_dir.join("backups"),
@@ -46,6 +48,7 @@ pub fn run() {
             commands::create_backup,
             commands::list_backups,
             commands::restore_backup,
+            commands::fetch_market_quotes,
             desktop_shell::sync_menu_bar_todo
         ])
         .run(tauri::generate_context!())

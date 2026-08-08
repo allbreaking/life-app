@@ -7,7 +7,7 @@ export const domainResourceSchema = z.enum([
   'schedule.pool', 'schedule.scheduled', 'schedule.lifeSchedules',
   'finance.budgetCents', 'finance.spentCents', 'finance.pending', 'finance.lastTransaction',
   'items.foods', 'items.items', 'network.people',
-  'trade.watchlist', 'trade.positions', 'trade.reviews', 'learning.domains',
+  'trade.watchlist', 'trade.positions', 'trade.reviews', 'trade.sop', 'learning.domains',
 ]);
 export type DomainResource = z.infer<typeof domainResourceSchema>;
 const errorSchema = z.object({ code: z.string(), message: z.string() });

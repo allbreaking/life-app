@@ -46,6 +46,7 @@
 
 - `createPosition`：watchlistId 必填，数据库外键再次保证。
 - `updateWatchPrice`：更新现价并返回逐股预警。
+- `fetchMarketQuotes(codes)`：仅接受最多 50 个不重复的沪深北 A 股六位代码，映射为新浪固定行情标识并批量查询；返回代码、现价、行情日期和时间。副作用：只读访问 `https://hq.sinajs.cn`，不写数据库；网络/HTTP/解析失败返回 `EXTERNAL_SERVICE_ERROR`，非法输入返回 `VALIDATION_ERROR`。
 - `saveDailyReview(date, content, requestId)`：按日期 upsert。
 
 ## LearningService

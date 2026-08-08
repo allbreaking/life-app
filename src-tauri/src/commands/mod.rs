@@ -6,8 +6,19 @@ use crate::{
     backup::{BackupInfo, BackupService},
     domain_resource::DomainResourceService,
     error::ErrorResponse,
+    market_quote::{MarketQuote, MarketQuoteService},
     notification::{DeliveryStatus, NotificationInput, NotificationService},
 };
+
+/// Fetches validated A-share snapshots from the fixed Sina Finance adapter. Side effects: sends
+/// one read-only HTTPS request to hq.sinajs.cn; does not write SQLite or expose generic networking.
+#[tauri::command]
+pub async fn fetch_market_quotes(
+    codes: Vec<String>,
+    service: State<'_, MarketQuoteService>,
+) -> Result<Vec<MarketQuote>, ErrorResponse> {
+    service.fetch(&codes).await.map_err(Into::into)
+}
 
 /// Creates one application-managed SQLite snapshot. Side effects: writes one file in app data.
 #[tauri::command]

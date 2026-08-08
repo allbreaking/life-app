@@ -27,7 +27,7 @@
 | finance | `budgetCents`, `spentCents`, `pending`, `lastTransaction` |
 | items | `foods`, `items` |
 | network | `people` |
-| trade | `watchlist`, `positions`, `reviews` |
+| trade | `watchlist`, `positions`, `reviews`, `sop` |
 | learning | `domains` |
 
 ## 错误与恢复

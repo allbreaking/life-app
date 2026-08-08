@@ -9,7 +9,7 @@ pub enum AppError {
     Conflict,
     #[error("本地存储暂时不可用")]
     Storage(#[from] rusqlite::Error),
-    #[error("系统通知暂时不可用")]
+    #[error("外部服务暂时不可用")]
     ExternalService,
     #[error("备份或恢复操作失败")]
     Backup,

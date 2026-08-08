@@ -44,6 +44,7 @@
 ### watchlist / position / trade / daily_review
 
 - `position.watchlist_id NOT NULL REFERENCES watchlist(id)`。
+- 未清仓 position 不含 `closePrice`、`profitPercent`、`closedAt`；已清仓 position 必须同时包含三者，其中价格为有限正数、日期为 `YYYY-MM-DD`。
 - `daily_review.review_date UNIQUE`。
 - 交易明细引用 position，不允许孤立持仓。
 

@@ -99,7 +99,8 @@ fn emit_action(app: &tauri::AppHandle, action: DesktopAction) {
 }
 
 /// Installs the native application menu.
-/// Side effects: replaces the application menu and registers a menu-event listener that may
+/// Side effects: replaces the application menu, exposes system edit actions that may mutate the
+/// focused text control/system clipboard, and registers a menu-event listener that may
 /// show/focus the main window and emit a validated `desktop-action` event. On macOS it also
 /// creates a short-title status item whose menu exposes the full todo and a completion action.
 pub fn install(app: &mut tauri::App) -> tauri::Result<()> {
@@ -109,7 +110,19 @@ pub fn install(app: &mut tauri::App) -> tauri::Result<()> {
         .separator()
         .quit()
         .build()?;
-    let menu = MenuBuilder::new(app).item(&app_menu).build()?;
+    let edit_menu = SubmenuBuilder::new(app, "编辑")
+        .undo_with_text("撤销")
+        .redo_with_text("重做")
+        .separator()
+        .cut_with_text("剪切")
+        .copy_with_text("复制")
+        .paste_with_text("粘贴")
+        .select_all_with_text("全选")
+        .build()?;
+    let menu = MenuBuilder::new(app)
+        .item(&app_menu)
+        .item(&edit_menu)
+        .build()?;
     app.set_menu(menu)?;
     #[cfg(target_os = "macos")]
     let (tray, detail_item, complete_item) = {

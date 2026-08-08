@@ -18,7 +18,7 @@
 | P2 | `work.tasks`, `work.focusIds`, `work.eodSubmitted`, `dashboard.completedTodoIndexes`, `compass.principles` |
 | P3 | `finance.budgetCents`, `finance.spentCents`, `finance.pending`, `finance.lastTransaction`, `items.foods`, `items.items` |
 | P4 | `network.people`, `learning.domains` |
-| P5 | `trade.watchlist`, `trade.positions`, `trade.reviews` |
+| P5 | `trade.watchlist`, `trade.positions`, `trade.reviews`, `trade.sop` |
 
 ## 存储规则
 
@@ -35,6 +35,6 @@
 
 ## 验收
 
-- 18 个资源均在白名单，非法资源、非法请求 ID、超大载荷被拒绝。
+- 20 个资源均在白名单，非法资源、非法请求 ID、超大载荷被拒绝。
 - 覆盖集合拆行/重组、空集合、标量、旧状态导入、幂等重试和请求冲突。
 - 前端不再引用模块状态键 API；类型检查、组件测试、Rust 测试和生产构建通过。

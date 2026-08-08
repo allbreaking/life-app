@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 const html = readFileSync('life_os_prototype.html', 'utf8');
 const spec = readFileSync('docs/spec.md', 'utf8');
+const appStyles = readFileSync('src/shared/styles/global.css', 'utf8');
 const modules = ['dashboard','compass','work','schedule','finance','items','network','trade','learning'];
 for (const module of modules) assert.match(html, new RegExp(`id="view-${module}"`), `缺少模块 ${module}`);
 assert.match(html, /e\.altKey\s*&&\s*e\.code==='Space'/, '缺少快捷键');
@@ -55,4 +56,8 @@ for (const quadrant of ['Q1','Q2','Q3','Q4']) assert.match(html, new RegExp(`dat
 assert.doesNotMatch(html, /onclick="openPalette\(\); selectCat\('(?:work|schedule)'/, '模块新增按钮不得依赖快捷面板');
 assert.match(spec, /函数副作用约定/, '规格未声明副作用');
 assert.doesNotMatch(html, /prompt\s*\(/, '禁止 prompt 编辑');
+assert.match(appStyles, /\.trade-sop textarea \{[^}]*border: 0;/, '投资 SOP 原地编辑框仍有边框');
+assert.match(appStyles, /\.position-price-editor input, \.position-close-editor input \{[^}]*border: 0;/, '持仓价格原地编辑框仍有边框');
+assert.match(appStyles, /\.trade-review-editor textarea \{[^}]*border: 0;/, '每日复盘原地编辑框仍有边框');
+assert.match(appStyles, /\.trade-sop textarea:focus-visible,[^{]+\{[^}]*outline: 0;[^}]*box-shadow: none;/, '原地编辑框聚焦时仍有边框效果');
 console.log('Life-OS 静态规格校验通过：9 模块、快捷录入、持久化、安全边界。');

@@ -6,7 +6,7 @@ DEV
 
 ## 当前节点
 
-SCHEDULE SINGLE SOURCE / COMPLETE
+INLINE EDITOR BORDERLESS STYLE / COMPLETE
 
 ## 计划
 
@@ -61,6 +61,47 @@ SCHEDULE SINGLE SOURCE / COMPLETE
 - [x] SCHEDULE SINGLE SOURCE PLAN：共享 schema、壳层状态、typed IPC、菜单事件与测试闭环
 - [x] SCHEDULE SINGLE SOURCE BUILD：移除硬编码待办和索引映射
 - [x] SCHEDULE SINGLE SOURCE VERIFY：类型、31 项前端测试、14 项 Rust 测试、静态规格与生产构建通过
+- [x] TRADE SOP INLINE EDIT DESIGN：定义同卡片编辑、保存/取消、输入校验与持久化副作用
+- [x] TRADE SOP INLINE EDIT PLAN：扩展领域资源白名单、投资组件、样式和自动测试
+- [x] TRADE SOP INLINE EDIT BUILD：实现投资 SOP 原地编辑与 SQLite 持久化
+- [x] TRADE SOP INLINE EDIT VERIFY：规格对照、类型、33 项前端测试、14 项 Rust 测试与生产构建通过（真实浏览器控制接口当前不可用）
+- [x] MACOS STANDARD EDIT MENU SPEC：定义标准编辑角色、系统剪贴板副作用与业务保存边界
+- [x] MACOS STANDARD EDIT MENU PLAN：在自定义应用菜单中恢复平台原生编辑子菜单并执行桌面构建校验
+- [x] MACOS STANDARD EDIT MENU BUILD：恢复撤销/重做、剪切、复制、粘贴和全选
+- [x] MACOS STANDARD EDIT MENU VERIFY：33 项前端测试、14 项 Rust 测试、完整检查、生产构建与 macOS `.app` bundle 通过
+- [x] TRADE SOP LINE BREAK DISPLAY SPEC：展示态保留用户回车并安全折行
+- [x] TRADE SOP LINE BREAK DISPLAY PLAN：添加专用展示样式与组件回归测试
+- [x] TRADE SOP LINE BREAK DISPLAY BUILD：实现换行展示
+- [x] TRADE SOP LINE BREAK DISPLAY VERIFY：类型、33 项前端测试、14 项 Rust 测试、静态规格与生产构建通过
+- [x] SINA MARKET QUOTE DESIGN：定义 Rust 固定域名 adapter、A 股代码白名单、交易窗口、陈旧数据和失败降级边界
+- [x] SINA MARKET QUOTE PLAN：新增行情 IPC、前端交易时段轮询、观察列表字段迁移兼容及双端测试
+- [x] SINA MARKET QUOTE BUILD：新增时自动取价并在交易时段每 60 秒刷新
+- [x] SINA MARKET QUOTE VERIFY：34 项前端测试、16 项 Rust 测试、真实新浪响应探测、发布审计与 macOS `.app` bundle 通过
+- [x] TRADE POSITION SELECT STYLE SPEC：定义与页面一致的选择器视觉及原生语义边界
+- [x] TRADE POSITION SELECT STYLE PLAN：添加选择器容器、自定义箭头、悬停与焦点样式
+- [x] TRADE POSITION SELECT STYLE BUILD：统一持仓下拉框风格
+- [x] TRADE POSITION SELECT STYLE VERIFY：类型、34 项前端测试、16 项 Rust 单线程测试、静态规格与生产构建通过
+- [x] TRADE POSITION LISTBOX STYLE SPEC：定义自绘选项层、稳定 ID 提交和键盘/焦点交互
+- [x] TRADE POSITION LISTBOX STYLE PLAN：以可访问 listbox 替换系统原生弹层并补组件测试
+- [x] TRADE POSITION LISTBOX STYLE BUILD：统一展开选项列表风格
+- [x] TRADE POSITION LISTBOX STYLE VERIFY：类型、34 项前端测试、16 项 Rust 单线程测试、静态规格与生产构建通过
+- [x] TRADE POSITION METRICS SPEC：定义单建仓价输入、现价阈值价差、减半仓价格与旧止损字段兼容边界
+- [x] TRADE POSITION METRICS PLAN：添加纯派生函数、持仓表格、响应式样式和自动回归测试
+- [x] TRADE POSITION METRICS BUILD：移除止损价录入/展示，展示建仓价、现价、目标/安全价差及条件减仓价
+- [x] TRADE POSITION METRICS VERIFY：类型、36 项前端测试、16 项 Rust 测试、静态规格与生产构建通过（当前会话未提供浏览器控制接口）
+- [x] TRADE POSITION PRICE INLINE EDIT SPEC：定义持仓行内编辑、正价校验、保存/取消与指标重算副作用
+- [x] TRADE POSITION PRICE INLINE EDIT BUILD：实现建仓价原地编辑并按稳定持仓 ID 持久化
+- [x] TRADE POSITION PRICE INLINE EDIT VERIFY：类型、36 项前端测试与静态规格通过，覆盖保存重算和取消恢复
+- [x] TRADE POSITION CLOSE DESIGN：清仓快照与当前持仓共用 `trade.positions` 单资源，以一次替换保证状态原子性
+- [x] TRADE POSITION CLOSE PLAN：扩展严格 schema、盈亏纯函数、行内清仓交互、双 Tab 派生列表与回归测试
+- [x] TRADE POSITION CLOSE BUILD：保存清仓价、已实现盈亏百分比和清仓日期，并提供已清仓 Tab
+- [x] TRADE POSITION CLOSE VERIFY：类型、38 项前端测试与静态规格通过，覆盖浮动盈亏、正/负已实现盈亏计算和 Tab 迁移
+- [x] TRADE REVIEW INLINE MANAGEMENT SPEC：定义按日期稳定定位的原地编辑、取消、删除与持久化副作用
+- [x] TRADE REVIEW INLINE MANAGEMENT BUILD：实现时间线条目内编辑/保存/取消及删除
+- [x] TRADE REVIEW INLINE MANAGEMENT VERIFY：类型、39 项前端测试与静态规格通过，覆盖原地编辑、取消恢复与删除
+- [x] INLINE EDITOR BORDERLESS STYLE SPEC：原地编辑控件移除常态边框，保留 `focus-visible` 可见焦点
+- [x] INLINE EDITOR BORDERLESS STYLE BUILD：统一投资 SOP、持仓价格与每日复盘原地编辑框样式
+- [x] INLINE EDITOR BORDERLESS STYLE VERIFY：组件样式断言、类型、前端测试、静态规格与生产构建通过
 - [ ] P6-C2 RELEASE ENV：Developer ID 签名、公证、安装后权限冒烟、依赖漏洞审计与发布审批（需要真实凭据/联网环境）
 
 ## 当前校验
@@ -79,9 +120,16 @@ SCHEDULE SINGLE SOURCE / COMPLETE
 - [x] 物品位置约束、食物完整清单与 3/7 天到期预警边界
 - [x] 社交人物名片、互动/重要日期结构与“不做关系评分”边界
 - [x] 投资观察列表、逐股价格预警、持仓来源限制与每日复盘结构
+- [x] 投资观察列表新增自动取价、北京时间交易窗口 60 秒轮询、陈旧行情保护与新浪来源时间
+- [x] 投资持仓仅录入建仓价，派生展示现价、目标/安全价差和条件减半仓价
+- [x] 投资持仓建仓价原地编辑、保存/取消与派生指标即时重算
+- [x] 投资持仓浮动盈亏展示、行内清仓、已实现盈亏快照持久化与当前/已清仓 Tab
+- [x] 投资每日复盘原地编辑、取消、删除与重启恢复
+- [x] 投资 SOP 同卡片原地编辑、保存/取消、输入校验与重启恢复
 - [x] 学习领域列表、整页工作区、里程碑派生进度与领域任务结构
 - [x] 快捷录入焦点约束/恢复、主内容跳转与全局键盘焦点可见
 - [x] P6-B1 原生菜单 ID 白名单、快捷录入/总览事件与非 Tauri 降级边界
+- [x] macOS 标准编辑菜单角色与所有文本输入控件的系统剪切、复制、粘贴、全选和撤销/重做快捷键
 - [x] P6-B2 系统级 Alt+Space 白名单、Pressed 边界与注册失败降级
 - [x] P6-B3 通知白名单、成功去重、失败重试与不同 occurrence 边界
 - [x] P6-B4 应用内快照 ID/目录边界、一致性备份、完整性/外键/schema 校验与恢复
