@@ -81,6 +81,21 @@ test('matches the frozen dashboard information structure', () => {
   expect(screen.getByRole('heading', { name: '即将到来的重要日期' })).toBeInTheDocument();
 });
 
+test('maps module alert states to the shared pulse animation classes', () => {
+  render(<App />);
+  expect(screen.getByRole('heading', { name: /预警聚合/ }).closest('section')).toHaveClass('alert-crimson');
+
+  fireEvent.click(screen.getByRole('button', { name: '财务' }));
+  expect(screen.getByRole('heading', { name: '月度预算' }).closest('section')).toHaveClass('alert-amber');
+
+  fireEvent.click(screen.getByRole('button', { name: '物品' }));
+  expect(screen.getByText(/已过期/).closest('.food-row')).toHaveClass('alert-crimson');
+
+  fireEvent.click(screen.getByRole('button', { name: '投资' }));
+  expect(screen.getByText('已跌破安全价').closest('.watch-row')).toHaveClass('alert-sky');
+  expect(screen.getByText('已达目标价').closest('.watch-row')).toHaveClass('alert-crimson');
+});
+
 test('renders compass principles and accepts a validated local principle draft', () => {
   render(<App />);
   fireEvent.click(screen.getByRole('button', { name: '人生地图' }));

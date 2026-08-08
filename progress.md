@@ -6,7 +6,7 @@ DEV
 
 ## 当前节点
 
-P6-C1 RELEASE GATE / COMPLETE
+ALERT MOTION PARITY / COMPLETE
 
 ## 计划
 
@@ -42,6 +42,9 @@ P6-C1 RELEASE GATE / COMPLETE
 - [x] P6-C1 PLAN：发布审计脚本、统一验证命令、本机 bundle 与真实发布环境门禁
 - [x] P6-C1 BUILD：实现无网络发布审计、统一验证/桌面 bundle 命令与跨平台图标配置
 - [x] P6-C1 VERIFY：完整门禁、生产预算、macOS Apple Silicon DMG 构建、完整性与 SHA-256 校验通过
+- [x] ALERT MOTION SPEC：定义跨模块告警呼吸动画与 reduced-motion 降级
+- [x] ALERT MOTION BUILD：恢复总览、财务、物品与投资告警的原型动画语义
+- [x] ALERT MOTION VERIFY：类型、29 项组件/单元测试、静态规格与生产构建通过（真实浏览器动画帧检查接口当前不可用）
 - [ ] P6-C2 RELEASE ENV：Developer ID 签名、公证、安装后权限冒烟、依赖漏洞审计与发布审批（需要真实凭据/联网环境）
 
 ## 当前校验

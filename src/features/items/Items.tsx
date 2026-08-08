@@ -20,6 +20,6 @@ export function Items() {
 }
 
 /** Side effects: none. */
-function FoodRow({ food }: { food: Food }) { const status = foodExpiryStatus(food.expiry); return <div className={`food-row ${status.tone}`}><span>{food.name}</span><span>{food.location}</span><time>{food.expiry}</time><span className={`chip ${status.tone === 'normal' ? 'sky' : status.tone}`}>{status.label}</span></div>; }
+function FoodRow({ food }: { food: Food }) { const status = foodExpiryStatus(food.expiry); const alertClass = status.tone === 'normal' ? '' : `alert-${status.tone}`; return <div className={`food-row ${status.tone} ${alertClass}`.trim()}><span>{food.name}</span><span>{food.location}</span><time>{food.expiry}</time><span className={`chip ${status.tone === 'normal' ? 'sky' : status.tone}`}>{status.label}</span></div>; }
 /** Side effects: none. */
 function DataRow({ label, children }: { label: string; children: React.ReactNode }) { return <div className="data-row"><span>{label}</span>{children}</div>; }
