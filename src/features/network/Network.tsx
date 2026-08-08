@@ -1,0 +1,14 @@
+import { useState, type FormEvent } from 'react';
+import { z } from 'zod';
+import { useDomainResource } from '../../shared/ipc/useDomainResource';
+
+type Person = { id: string; name: string; relation: string; note: string; importantDate?: string; lastInteraction: string };
+const initialPeople: Person[] = [{ id: 'n1', name: '老王', relation: '大学同学', lastInteraction: '3周前', importantDate: '3天后生日', note: '偏好：不吃香菜，喜欢手冲咖啡 · 上次聊到想学 Rust' }, { id: 'n2', name: '小明', relation: '前同事', lastInteraction: '昨天', note: '推荐了《罗杰疑案》，猫叫“咪咪”' }];
+const peopleSchema = z.array(z.object({ id: z.string().min(1).max(100), name: z.string().min(1).max(100), relation: z.string().max(100), note: z.string().max(500), importantDate: z.string().max(100).optional(), lastInteraction: z.string().max(100) }).strict());
+
+/** Side effects: persists person-card state through typed IPC to SQLite; sends no notifications. */
+export function Network() {
+  const [people, setPeople] = useDomainResource('network.people', peopleSchema, initialPeople); const [message, setMessage] = useState('');
+  const submit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; const data = new FormData(form); const name = String(data.get('name') ?? '').trim(); const relation = String(data.get('relation') ?? '').trim(); const note = String(data.get('note') ?? '').trim(); const date = String(data.get('date') ?? '').trim(); if (!name || name.length > 100) return setMessage('姓名应为 1–100 个字符'); setPeople((items) => [...items, { id: crypto.randomUUID(), name, relation: relation || '联系人', note: note || '暂无记录', importantDate: date || undefined, lastInteraction: '刚刚添加' }]); form.reset(); setMessage('联系人已加入本次运行状态'); };
+  return <div className="network-view"><section className="card network-form"><h2>添加联系人 / 记录互动</h2><form onSubmit={submit}><input name="name" maxLength={100} required placeholder="姓名" /><input name="relation" maxLength={100} placeholder="关系，如大学同学/前同事" /><input name="note" maxLength={500} placeholder="偏好/互动内容/近况" /><input name="date" maxLength={100} placeholder="重要日期（可选），如 生日 08-15" /><button className="command-button" type="submit">保存</button></form>{message && <p role="status" className="status-message">{message}</p>}</section><div className="grid grid-2 people-grid">{people.map((person) => <article className="person-card" key={person.id}><header><span className="person-avatar">{person.name.at(0)}</span><div><strong>{person.name}</strong><p className="small">{person.relation} · 上次互动：{person.lastInteraction}</p></div>{person.importantDate && <span className="chip amber">{person.importantDate}</span>}</header><p>{person.note}</p></article>)}</div><section className="card network-policy"><p className="small">已取消断联倒计时机制 — 仅基于生日或自定义重大事件提醒，不对关系做量化打分。</p></section></div>;
+}

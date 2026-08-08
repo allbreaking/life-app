@@ -1,0 +1,1798 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Life-OS 本地优先个人认知运行系统">
+<title>Life-OS</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;600;700&display=swap');
+
+:root{
+  --bg:#F8FAFC;
+  --card:#FFFFFF;
+  --text:#334155;
+  --text-dim:#94A3B8;
+  --text-strong:#0F172A;
+  --accent:#0EA5E9;
+  --accent2:#38BDF8;
+  --accent-deep:#0369A1;
+  --accent-tint:#EFF8FE;
+  --crimson:#F43F5E;
+  --crimson-tint:#FEF1F3;
+  --amber:#F59E0B;
+  --amber-tint:#FEF8EC;
+  --emerald:#10B981;
+  --emerald-tint:#EDFBF6;
+  --being:#A78BFA;
+  --being-tint:#F5F2FE;
+  --icon-gray:#94A3B8;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Noto Sans SC', -apple-system, sans-serif;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{
+  font-family:var(--sans);
+  background:var(--bg);
+  color:var(--text);
+  height:100vh;
+  overflow:hidden;
+}
+.toast{position:fixed;right:24px;bottom:42px;z-index:200;background:#0F172A;color:#fff;padding:10px 14px;border-radius:10px;font-size:12px;opacity:0;transform:translateY(8px);pointer-events:none;transition:.2s}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.error{background:var(--crimson)}
+button{font:inherit}
+.app{ display:flex; height:calc(100vh - 26px); }
+
+/* minimalist line icons — flat, monochrome, no fill */
+.icon{
+  display:inline-flex; align-items:center; justify-content:center;
+  color:var(--icon-gray); flex-shrink:0;
+}
+.icon svg{ width:100%; height:100%; display:block; }
+.nav-icon.icon{ width:17px; height:17px; }
+.nav-item.active .nav-icon.icon{ color:var(--accent-deep); }
+.cat-item .ic.icon{ width:13px; height:13px; margin:0; }
+.hico.icon{ width:14px; height:14px; color:var(--icon-gray); }
+.cmd-ic.icon{ width:14px; height:14px; }
+
+/* ---------- Sidebar ---------- */
+.sidebar{
+  width:216px;
+  flex-shrink:0;
+  background:#FFFFFF;
+  padding:20px 14px;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+.brand{
+  font-size:15px; font-weight:700; color:var(--text-strong);
+  padding:6px 10px 18px 10px; letter-spacing:0.3px;
+}
+.brand span{color:var(--accent);}
+.nav-item{
+  display:flex; align-items:center; gap:10px;
+  padding:9px 10px; border-radius:10px; cursor:pointer;
+  font-size:13.5px; color:var(--text); transition:all .15s;
+}
+.nav-item:hover{ background:#F1F5F9; }
+.nav-item.active{
+  background:var(--accent-tint);
+  color:var(--accent-deep); font-weight:600;
+}
+.nav-icon{ width:20px; }
+.sidebar-foot{
+  margin-top:auto; padding:10px;
+  font-size:11px; color:var(--text-dim); line-height:1.6;
+}
+.kbd{
+  display:inline-block; background:#F1F5F9;
+  border-radius:5px; padding:1px 6px; font-family:var(--mono); font-size:10px;
+  color:var(--text-dim);
+}
+
+/* ---------- Main ---------- */
+.main{ flex:1; overflow-y:auto; padding:26px 34px 60px; background:var(--bg); }
+.topbar{
+  display:flex; justify-content:space-between; align-items:center;
+  margin-bottom:22px;
+}
+.view-title{ font-size:20px; font-weight:700; color:var(--text-strong); }
+.view-sub{ font-size:12.5px; color:var(--text-dim); margin-top:3px; }
+.cmd-btn{
+  background:#FFFFFF; border-radius:10px; padding:9px 16px; font-size:12.5px; color:var(--text);
+  cursor:pointer; display:flex; align-items:center; gap:8px;
+}
+.cmd-btn:hover{ color:var(--accent-deep); background:var(--accent-tint); }
+
+.view{ display:none; }
+.view.active{ display:block; animation:fadeIn .2s ease; }
+@keyframes fadeIn{ from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);} }
+
+.grid{ display:grid; gap:16px; }
+.g2{ grid-template-columns:1fr 1fr; }
+.g3{ grid-template-columns:1fr 1fr 1fr; }
+.g4{ grid-template-columns:repeat(4,1fr); }
+
+.card{
+  background:var(--card); border-radius:16px; padding:18px;
+}
+.card h3{ font-size:13.5px; font-weight:700; color:var(--text-strong); margin-bottom:12px; display:flex; align-items:center; gap:6px; justify-content:space-between;}
+.card h3 .tag{ font-size:10px; font-weight:500; color:var(--text-dim); background:#F1F5F9; padding:2px 8px; border-radius:20px;}
+.mono{ font-family:var(--mono); }
+
+/* alert levels — color only, no border */
+.alert-crimson{ background:var(--crimson-tint) !important; }
+.alert-amber{ background:var(--amber-tint) !important; }
+.pulse-crimson{ animation:pulseC 1.8s infinite; }
+@keyframes pulseC{ 0%,100%{box-shadow:0 0 0 0 rgba(244,63,94,0.18);} 50%{box-shadow:0 0 0 6px rgba(244,63,94,0);} }
+@keyframes pulseA{ 0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,0.18);} 50%{box-shadow:0 0 0 6px rgba(245,158,11,0);} }
+.pulse-amber{animation:pulseA 1.8s infinite}
+@keyframes pulseBlue{ 0%,100%{box-shadow:0 0 0 0 rgba(14,165,233,0.20);} 50%{box-shadow:0 0 0 6px rgba(14,165,233,0);} }
+.chip{ display:inline-flex; align-items:center; gap:5px; font-size:11px; padding:3px 9px; border-radius:20px; font-weight:600;}
+.chip.crimson{ background:var(--crimson-tint); color:var(--crimson); }
+.chip.amber{ background:var(--amber-tint); color:#B45309; }
+.chip.emerald{ background:var(--emerald-tint); color:#047857; }
+.chip.sky{ background:var(--accent-tint); color:var(--accent-deep); }
+.chip.violet{ background:var(--being-tint); color:#6D28D9; }
+
+.progress{ height:8px; background:#EEF2F6; border-radius:20px; overflow:hidden; }
+.progress-fill{ height:100%; border-radius:20px; background:var(--accent); }
+.progress-fill.amber{ background:var(--amber); }
+.progress-fill.crimson{ background:var(--crimson); }
+
+.row{ display:flex; align-items:center; justify-content:space-between; padding:9px 0; font-size:12.5px; }
+.row + .row{ border-top:none; }
+.small{ font-size:11px; color:var(--text-dim); }
+
+/* today todo checklist */
+.todo-row{ display:flex; align-items:center; gap:10px; padding:9px 0; font-size:12.5px; cursor:pointer; }
+.todo-check{
+  width:16px; height:16px; border-radius:5px; background:#EEF2F6;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  transition:background .15s;
+}
+.todo-check svg{ width:11px; height:11px; opacity:0; transition:opacity .15s; color:#fff; }
+.todo-row.done .todo-check{ background:var(--emerald); }
+.todo-row.done .todo-check svg{ opacity:1; }
+.todo-row.done .todo-title{ text-decoration:line-through; color:var(--text-dim); }
+.todo-time{ font-family:var(--mono); font-size:11px; color:var(--text-dim); width:40px; flex-shrink:0; }
+.todo-title{ flex:1; }
+
+/* EOD three-box form */
+.eod-input{
+  width:100%; background:#F8FAFC; border:none; outline:none; border-radius:8px;
+  padding:9px 12px; font-size:12.5px; color:var(--text-strong); font-family:var(--sans);
+}
+.eod-input:focus{ background:var(--accent-tint); }
+.eod-input-num{ width:100px; font-family:var(--mono); }
+
+/* trade watchlist rows */
+.watch-row{ display:flex; align-items:center; gap:14px; padding:10px 0; font-size:12px; }
+.watch-row .wcode{ font-family:var(--mono); font-weight:700; width:110px; flex-shrink:0; }
+.watch-row .wprice{ width:70px; color:var(--text-dim); flex-shrink:0; }
+.watch-row .wstatus{ margin-left:auto; }
+.watch-row.hit-target{ background:var(--crimson-tint); border-radius:8px; padding-left:8px; padding-right:8px; animation:pulseC 1.8s infinite; }
+.watch-row.hit-safety{ background:var(--accent-tint); border-radius:8px; padding-left:8px; padding-right:8px; animation:pulseBlue 1.8s infinite; }
+.watch-head{ display:flex; gap:14px; font-size:10.5px; color:var(--text-dim); padding:0 0 4px; }
+.watch-head span:nth-child(1){ width:110px; }
+.watch-head span:nth-child(2), .watch-head span:nth-child(3), .watch-head span:nth-child(4){ width:70px; }
+
+/* per-module add entry button */
+.add-btn{
+  width:20px; height:20px; border-radius:6px; background:#F1F5F9;
+  display:inline-flex; align-items:center; justify-content:center; cursor:pointer;
+  color:var(--text-dim); flex-shrink:0; transition:all .15s;
+}
+.add-btn:hover{ background:var(--accent-tint); color:var(--accent-deep); }
+.add-btn svg{ width:12px; height:12px; }
+.inline-form{ display:none; background:#F8FAFC; border-radius:10px; padding:12px; margin-bottom:12px; }
+.inline-form.show{ display:block; }
+.inline-form .type-row{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
+.type-pill{ font-size:11px; padding:5px 11px; border-radius:20px; background:#fff; cursor:pointer; color:var(--text-dim); }
+.type-pill.selected{ background:var(--accent-tint); color:var(--accent-deep); font-weight:600; }
+
+/* in-place editing */
+.editable{ cursor:text; border-bottom:1px dashed transparent; transition:border-color .15s; }
+.editable:hover{ border-bottom-color:var(--text-dim); }
+.edit-input{
+  background:var(--accent-tint); border:none; outline:none; border-radius:6px;
+  padding:2px 7px; font:inherit; color:inherit; width:100%; box-sizing:border-box;
+}
+
+/* ---------- Command Palette ---------- */
+.overlay{
+  position:fixed; inset:0; background:rgba(15,23,42,0.28);
+  display:none; align-items:flex-start; justify-content:center;
+  padding-top:12vh; z-index:100;
+}
+.overlay.show{ display:flex; }
+.palette{
+  width:560px; background:#FFFFFF; border-radius:18px; padding:18px;
+  box-shadow:0 20px 60px rgba(15,23,42,0.16);
+}
+.palette-input{
+  width:100%; border:none; outline:none; font-size:15px; font-family:var(--mono);
+  background:transparent; color:var(--text-strong); padding:8px 4px;
+}
+.palette-hint{ font-size:11px; color:var(--text-dim); padding:2px 4px 12px; margin-bottom:12px; background:#F8FAFC; border-radius:8px 8px 0 0;}
+.cat-grid{ display:flex; flex-wrap:wrap; gap:7px; }
+.cat-item{
+  display:inline-flex; align-items:center; gap:5px;
+  border-radius:20px; padding:6px 12px;
+  cursor:pointer; font-size:11.5px; transition:all .15s; background:#F8FAFC; color:var(--text);
+}
+.cat-item:hover{ background:var(--accent-tint); color:var(--accent-deep);}
+.sub-grid{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;}
+.sub-chip{ border-radius:10px; padding:7px 14px; font-size:12px; cursor:pointer; background:#F8FAFC;}
+.sub-chip:hover{ background:var(--accent-tint); color:var(--accent-deep); }
+.cat-item.selected,.sub-chip.selected{background:var(--accent-tint);color:var(--accent-deep);font-weight:600}
+@media (max-width:900px){
+  body{height:auto;overflow:auto}.app{height:auto;min-height:calc(100vh - 26px);display:block}.sidebar{width:100%;padding:12px;flex-direction:row;overflow-x:auto;position:sticky;top:26px;z-index:50}.brand,.sidebar-foot{display:none}.nav-item{white-space:nowrap}.main{padding:20px 16px 50px;overflow:visible}.g3,.g4{grid-template-columns:1fr 1fr}.palette{width:min(560px,calc(100vw - 24px))}
+  .schedule-layout{grid-template-columns:1fr}.week-grid,.calendar-grid{min-width:760px}
+}
+@media (max-width:620px){.g2,.g3,.g4{grid-template-columns:1fr}.topbar{align-items:flex-start;gap:12px}.cmd-btn .kbd{display:none}.watch-row{overflow-x:auto}.menubar-center{display:none}}
+.sub-chip.selected{ background:var(--accent-tint); color:var(--accent-deep); font-weight:600; }
+.cat-item.selected{ background:var(--accent-tint); color:var(--accent-deep); font-weight:600; }
+.cat-item.selected .icon{ color:var(--accent-deep); }
+.back-link{ font-size:11px; color:var(--accent-deep); cursor:pointer; margin-bottom:10px; display:inline-block;}
+
+/* schedule */
+.timeline{ display:flex; flex-direction:column; gap:0; border-left:2px solid #E2E8F0; margin-left:6px; padding-left:16px;}
+.tl-slot{ position:relative; padding:10px 0; }
+.tl-slot::before{ content:''; position:absolute; left:-21px; top:14px; width:9px; height:9px; border-radius:50%; background:var(--accent); }
+.tl-time{ font-family:var(--mono); font-size:11px; color:var(--text-dim); }
+.tl-title{ font-size:13px; font-weight:600; margin-top:2px;}
+.src-work{border-left:3px solid var(--accent); padding-left:10px;}
+.src-learn{border-left:3px solid var(--emerald); padding-left:10px;}
+.src-hobby{border-left:3px solid var(--being); padding-left:10px;}
+.src-life{border-left:3px solid var(--amber); padding-left:10px;}
+.pool-item{ display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:#F8FAFC; border-radius:8px; margin-bottom:6px; font-size:12px;}
+.pool-item[draggable="true"],.scheduled-task[draggable="true"]{cursor:grab}.pool-item.dragging,.scheduled-task.dragging{opacity:.45}.pool-module{background:#F8FAFC;border-radius:12px;padding:10px;margin-bottom:8px}.pool-module-head{display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:700;margin-bottom:7px;cursor:pointer}.pool-module.collapsed .pool-item{display:none}.pool-module.collapsed .pool-module-head{margin-bottom:0}.pool-count{font-family:var(--mono);color:var(--text-dim)}.pool-return{border-radius:12px;padding:4px;transition:.15s}.pool-return.drag-over{background:#E0F2FE;box-shadow:inset 0 0 0 2px var(--accent2)}
+.drag-hint{ font-size:10px; color:var(--text-dim); }
+.schedule-tabs{display:flex;gap:6px}.schedule-tab{appearance:none;border:0;outline:0;padding:6px 12px;border-radius:20px;background:#F1F5F9;color:var(--text-dim);font:500 11px var(--sans);cursor:pointer;transition:background .15s,color .15s}.schedule-tab:hover{background:#EAF1F7;color:var(--text)}.schedule-tab:focus-visible{background:#E0F2FE;color:var(--accent-deep);box-shadow:0 0 0 3px rgba(14,165,233,.12)}.schedule-tab.active{background:var(--accent-tint);color:var(--accent-deep);font-weight:700}.schedule-panel{display:none}.schedule-panel.active{display:block}.drop-zone{min-height:38px;border-radius:8px;background:#F8FAFC;padding:5px 8px;transition:.15s}.drop-zone.drag-over{background:#E0F2FE;box-shadow:inset 0 0 0 2px var(--accent2)}.scheduled-task{font-size:11px;background:#fff;border-radius:7px;padding:6px 8px;margin-bottom:4px;box-shadow:0 1px 3px rgba(15,23,42,.05)}.task-time-input{width:67px;border:0;background:rgba(255,255,255,.65);border-radius:5px;padding:1px 3px;font:9px var(--mono);color:var(--text);margin-right:4px}.quadrant-badge{font-family:var(--mono);font-size:9px;padding:2px 5px;border-radius:5px;background:#EEF2FF;color:#4338CA;font-weight:700}
+.calendar-scroll{height:610px;overflow-y:auto;position:relative}.time-board{display:grid;grid-template-columns:52px 1fr;position:relative}.time-gutter{position:relative;height:960px}.time-label{position:absolute;right:8px;transform:translateY(-6px);font:9px var(--mono);color:var(--text-dim)}.calendar-time-canvas{position:relative;height:960px;background:repeating-linear-gradient(to bottom,#F8FAFC 0,#F8FAFC 59px,#E2E8F0 60px);border-radius:10px}.calendar-time-canvas.drag-over{background-color:#E0F2FE}.calendar-event{position:absolute;left:4px;right:4px;min-height:22px;border-radius:7px;background:#E0F2FE;color:var(--accent-deep);padding:5px 7px;font-size:10px;overflow:hidden;box-shadow:0 1px 4px rgba(15,23,42,.08);z-index:2}.calendar-event.module-learning{background:var(--emerald-tint);color:#047857}.calendar-event.module-items{background:var(--amber-tint);color:#B45309}.calendar-event.module-network{background:var(--being-tint);color:#6D28D9}.calendar-event.module-life{background:#FFF7ED;color:#C2410C}.calendar-event.life-template{cursor:default;box-shadow:none}.event-resize{position:absolute;left:25%;right:25%;bottom:1px;height:5px;border-radius:4px;cursor:ns-resize;background:currentColor;opacity:.3}.now-line{position:absolute;left:0;right:0;height:2px;background:var(--crimson);z-index:4;pointer-events:none}.now-line::before{content:'';position:absolute;left:-4px;top:-3px;width:8px;height:8px;border-radius:50%;background:var(--crimson)}.week-time-board{display:grid;grid-template-columns:44px repeat(7,minmax(105px,1fr));min-width:800px}.week-time-col{position:relative;height:960px;background:repeating-linear-gradient(to bottom,#F8FAFC 0,#F8FAFC 59px,#E2E8F0 60px);border-left:1px solid #fff}.week-col-head{position:sticky;top:0;background:#fff;z-index:6;text-align:center;font-size:10px;padding:7px}.life-template-row{display:flex;align-items:center;gap:8px;padding:8px 10px;background:#F8FAFC;border-radius:9px;margin-bottom:6px;font-size:11px}.life-template-row .life-title{flex:1;font-weight:600}.text-action{border:0;background:transparent;color:var(--accent-deep);font:11px var(--sans);cursor:pointer;padding:3px 5px}.text-action.danger{color:var(--crimson)}
+.week-grid{display:grid;grid-template-columns:repeat(7,minmax(110px,1fr));gap:6px;overflow-x:auto}.week-day{min-height:260px;background:#F8FAFC;border-radius:10px;padding:8px}.week-day.today{background:var(--accent-tint)}.calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(90px,1fr));gap:5px;overflow-x:auto}.calendar-head{text-align:center;font-size:10px;color:var(--text-dim);padding:5px}.calendar-day{min-height:105px;background:#F8FAFC;border-radius:9px;padding:7px}.calendar-day.muted{opacity:.38}.calendar-day.today{background:var(--accent-tint)}.calendar-date{font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-bottom:6px}.schedule-layout{grid-template-columns:minmax(0,2fr) minmax(260px,1fr)}
+
+/* quadrants — color background only, no border */
+.quad{ border-radius:14px; padding:14px; min-height:150px; }
+.quad h4{ font-size:12px; margin-bottom:8px; display:flex; justify-content:space-between;}
+.q1{ background:var(--crimson-tint); }
+.q2{ background:var(--accent-tint); }
+.q3{ background:var(--amber-tint); }
+.q4{ background:#F1F5F9; }
+.task-card{ background:#fff; border-radius:8px; padding:8px 10px; font-size:11.5px; margin-bottom:6px;}
+
+/* being/doing */
+.bd-col{ border-radius:16px; padding:16px; }
+.being-col{ background:var(--being-tint); }
+.doing-col{ background:var(--accent-tint); }
+.principle-chip{ background:#fff; border-radius:10px; padding:8px 12px; font-size:12px; margin-bottom:8px;}
+
+/* person card */
+.person-card{ background:#fff; border-radius:14px; padding:14px; }
+.person-avatar{ width:36px; height:36px; border-radius:50%; background:#E2E8F0; color:var(--text-dim); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px;}
+
+footer.hint{ text-align:center; font-size:11px; color:var(--text-dim); margin-top:24px;}
+.food-row{display:grid;grid-template-columns:minmax(120px,1.5fr) minmax(100px,1fr) 140px auto;gap:10px;align-items:center;padding:9px 10px;background:#F8FAFC;border-radius:9px;margin-bottom:6px;font-size:11.5px}.food-expiry{border:0;background:#fff;border-radius:6px;padding:5px 7px;font:10px var(--mono);color:var(--text)}@media(max-width:620px){.food-row{grid-template-columns:1fr 1fr}.food-expiry{width:100%}}
+.learning-domain-card{cursor:pointer;transition:transform .15s,background .15s}.learning-domain-card:hover{transform:translateY(-2px);background:var(--accent-tint)}.domain-detail-overlay{position:fixed;inset:26px 0 0 216px;background:var(--bg);display:none;z-index:120}.domain-detail-overlay.show{display:block}.domain-detail-panel{width:100%;height:100%;background:var(--bg);padding:30px 34px;overflow-y:auto}.domain-detail-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px}.domain-workspace-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(300px,.8fr);gap:16px}.domain-workspace-section{background:#fff;border-radius:16px;padding:18px}.domain-detail-list{margin:8px 0 16px}.domain-detail-item{display:flex;gap:9px;align-items:center;padding:8px 10px;background:#F8FAFC;border-radius:9px;margin-bottom:6px;font-size:12px}.domain-detail-item.done span{text-decoration:line-through;color:var(--text-dim)}.domain-detail-check{width:16px;height:16px;border:0;border-radius:5px;background:#E2E8F0;cursor:pointer}.domain-detail-item.done .domain-detail-check{background:var(--emerald)}@media(max-width:900px){.domain-detail-overlay{inset:26px 0 0 0}.domain-workspace-grid{grid-template-columns:1fr}}
+.select-shell{position:relative;display:flex;min-width:150px}.styled-select{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px}.custom-select-trigger{appearance:none;border:0;outline:0;width:100%;background:#FFFFFF;color:var(--text-strong);border-radius:10px;padding:9px 34px 9px 12px;font:12.5px var(--sans);cursor:pointer;text-align:left;position:relative}.custom-select-trigger::after{content:'';position:absolute;right:13px;top:50%;width:6px;height:6px;border-right:1.5px solid var(--text-dim);border-bottom:1.5px solid var(--text-dim);transform:translateY(-65%) rotate(45deg);transition:transform .15s}.select-shell.open .custom-select-trigger{background:var(--accent-tint);color:var(--accent-deep)}.select-shell.open .custom-select-trigger::after{transform:translateY(-25%) rotate(225deg);border-color:var(--accent-deep)}.custom-select-trigger:focus-visible{box-shadow:0 0 0 3px rgba(14,165,233,.12)}.custom-select-menu{display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:80;background:#FFFFFF;border-radius:12px;padding:6px;box-shadow:0 14px 34px rgba(15,23,42,.14)}.select-shell.open .custom-select-menu{display:block}.custom-select-option{padding:8px 10px;border-radius:8px;color:var(--text);font-size:12px;cursor:pointer}.custom-select-option:hover{background:#F8FAFC}.custom-select-option.selected{background:var(--accent-tint);color:var(--accent-deep);font-weight:600}.select-shell.disabled{opacity:.5;pointer-events:none}
+#view-items.active{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:16px;align-items:start}#view-items.active>#itemFormCard{grid-column:2;grid-row:1/span 20;position:sticky;top:18px;margin-bottom:0!important}#view-items.active>:not(#itemFormCard){grid-column:1;margin-top:0!important}@media(max-width:900px){#view-items.active{grid-template-columns:1fr}#view-items.active>#itemFormCard{grid-column:1;grid-row:auto;position:static;order:-1}#view-items.active>:not(#itemFormCard){grid-column:1}}
+#view-learning.active{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:16px;align-items:start}#view-learning.active>#learningFormCard{grid-column:2;grid-row:1/span 20;position:sticky;top:18px;margin-bottom:0!important}#view-learning.active>:not(#learningFormCard){grid-column:1;margin-top:0!important}@media(max-width:900px){#view-learning.active{grid-template-columns:1fr}#view-learning.active>#learningFormCard{grid-column:1;grid-row:auto;position:static;order:-1}#view-learning.active>:not(#learningFormCard){grid-column:1}}
+
+/* ---------- Mac 系统顶部菜单栏 (独立于 App 内部 topbar) ---------- */
+.menubar{
+  height:26px; background:rgba(255,255,255,0.85); backdrop-filter:blur(14px);
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 14px; font-size:11.5px; color:var(--text);
+  position:relative; z-index:50;
+}
+.menubar-left{ display:flex; align-items:center; gap:14px; color:var(--text-dim); }
+.menubar-right{ display:flex; align-items:center; gap:14px; }
+.menubar-widget{
+  display:flex; align-items:center; gap:6px; cursor:pointer; padding:3px 9px;
+  border-radius:7px; transition:background .15s; color:var(--text);
+}
+.menubar-widget:hover{ background:#F1F5F9; }
+.menubar-widget .icon{ width:12px; height:12px; color:var(--icon-gray); }
+.menubar-dot{ width:6px; height:6px; border-radius:50%; background:var(--crimson); }
+.menubar-clock{ font-family:var(--mono); font-size:11px; color:var(--text-dim); }
+
+.menubar-popover{
+  display:none; position:absolute; top:30px; right:14px; width:280px;
+  background:#fff; border-radius:14px; padding:14px;
+  box-shadow:0 16px 40px rgba(15,23,42,0.16); z-index:60;
+}
+.menubar-popover.show{ display:block; }
+.menubar-popover h4{ font-size:11.5px; font-weight:700; margin-bottom:8px; color:var(--text-strong);}
+.menubar-popover .row{ padding:6px 0; font-size:12px; }
+.menubar-popover .expand-link{ font-size:11px; color:var(--accent-deep); cursor:pointer; margin-top:6px; display:inline-block;}
+</style>
+</head>
+<body>
+<div class="menubar" id="menubar">
+  <div class="menubar-left">
+    <span>周六</span><span class="menubar-clock" id="menubarClock">09:14</span>
+  </div>
+  <div class="menubar-right">
+    <div class="menubar-widget" onclick="openPalette(); event.stopPropagation();">
+      <span class="icon" data-icon="zap"></span> 快捷录入
+    </div>
+    <div class="menubar-widget" onclick="toggleMenubarPopover(); event.stopPropagation();">
+      <span class="icon" data-icon="calendar"></span> 14:00 项目周例会
+      <span class="menubar-dot"></span>
+    </div>
+  </div>
+  <div class="menubar-popover" id="menubarPopover">
+    <h4>今日待办</h4>
+    <div class="row" style="display:flex; justify-content:space-between;"><span>09:30 #LifeOS 架构梳理</span></div>
+    <div class="row" style="display:flex; justify-content:space-between;"><span>14:00 项目周例会</span></div>
+    <div class="row" style="display:flex; justify-content:space-between;"><span>19:00 芭蕾课</span></div>
+    <h4 style="margin-top:10px;">预警</h4>
+    <div class="row"><span class="chip amber">猫粮 3天后耗尽</span></div>
+    <div class="row"><span class="chip crimson">600519 触及安全价</span></div>
+    <span class="expand-link" onclick="toggleMenubarPopover()">展开完整视图 →</span>
+  </div>
+</div>
+<div class="app">
+  <div class="sidebar">
+    <div class="brand">Life<span>-OS</span></div>
+    <div class="nav-item active" data-view="dashboard"><span class="nav-icon icon" data-icon="home"></span>今日总览</div>
+    <div class="nav-item" data-view="compass"><span class="nav-icon icon" data-icon="compass"></span>人生地图</div>
+    <div class="nav-item" data-view="work"><span class="nav-icon icon" data-icon="briefcase"></span>工作</div>
+    <div class="nav-item" data-view="schedule"><span class="nav-icon icon" data-icon="calendar"></span>日程</div>
+    <div class="nav-item" data-view="finance"><span class="nav-icon icon" data-icon="wallet"></span>财务</div>
+    <div class="nav-item" data-view="items"><span class="nav-icon icon" data-icon="package"></span>物品</div>
+    <div class="nav-item" data-view="network"><span class="nav-icon icon" data-icon="users"></span>社交</div>
+    <div class="nav-item" data-view="trade"><span class="nav-icon icon" data-icon="trendingUp"></span>投资</div>
+    <div class="nav-item" data-view="learning"><span class="nav-icon icon" data-icon="bookOpen"></span>学习</div>
+    <div class="sidebar-foot">
+      唤醒命令面板<br><span class="kbd">⌥</span> + <span class="kbd">Space</span>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="view-title" id="viewTitle">今日总览</div>
+        <div class="view-sub" id="viewSub">高杠杆，低负荷 — 每日聚焦，信息过滤</div>
+      </div>
+      <div class="cmd-btn" onclick="openPalette()"><span class="cmd-ic icon" data-icon="zap"></span> 快捷录入 <span class="kbd">⌥Space</span></div>
+    </div>
+
+    <!-- ============ DASHBOARD ============ -->
+    <div class="view active" id="view-dashboard">
+      <div class="card" style="margin-bottom:16px; background:var(--accent-tint);">
+        <div style="font-size:11px; color:var(--accent-deep); font-weight:700; display:flex; align-items:center; gap:5px;"><span class="hico icon" data-icon="compass" style="color:var(--accent-deep);"></span> 本月北极星</div>
+        <div style="font-size:15px; font-weight:700; margin:4px 0;">完成 Life-OS 核心机制交付，减少一切伪需求打扰</div>
+        <div class="small">原则提示：倒过来想，总是倒过来想。</div>
+      </div>
+      <div class="grid g2">
+        <div class="card">
+          <h3><span style="display:flex; align-items:center; gap:6px;"><span class="hico icon" data-icon="calendar"></span> 今日待办</span> <span class="tag">默认展示3个未完成项</span></h3>
+          <div id="todoList">
+            <div class="todo-row" onclick="toggleTodo(this)"><span class="todo-time">09:30</span><span class="todo-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,12 9,17 20,6"/></svg></span><span class="todo-title">#LifeOS 架构梳理</span></div>
+            <div class="todo-row" onclick="toggleTodo(this)"><span class="todo-time">14:00</span><span class="todo-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,12 9,17 20,6"/></svg></span><span class="todo-title">项目周例会</span></div>
+            <div class="todo-row" onclick="toggleTodo(this)"><span class="todo-time">19:00</span><span class="todo-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="4,12 9,17 20,6"/></svg></span><span class="todo-title">芭蕾课</span></div>
+          </div>
+        </div>
+        <div class="card alert-crimson pulse-crimson">
+          <h3 style="justify-content:flex-start; gap:6px;"><span class="hico icon" data-icon="alertTriangle" style="color:var(--crimson);"></span> 预警聚合</h3>
+          <div class="row"><span>猫粮预计 3 天后耗尽</span><span class="chip amber">物品</span></div>
+          <div class="row"><span>本月预算已用 82%</span><span class="chip amber">财务</span></div>
+          <div class="row"><span>600519 触及安全价</span><span class="chip crimson">投资</span></div>
+        </div>
+      </div>
+      <div class="grid g2" style="margin-top:16px;">
+        <div class="card">
+          <h3>本周投入统计</h3>
+          <div class="row"><span>加班累计</span><span class="mono">6.5h / 15h</span></div>
+          <div class="row"><span>学习任务完成</span><span class="mono">4 个</span></div>
+          <div class="row"><span>学习时长</span><span class="mono">3.2h</span></div>
+        </div>
+        <div class="card">
+          <h3>即将到来的重要日期</h3>
+          <div class="row"><span>老王 生日</span><span class="chip amber">3 天后</span></div>
+          <div class="row"><span>妈妈 体检复诊</span><span class="chip sky">9 天后</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ COMPASS ============ -->
+    <div class="view" id="view-compass">
+      <div class="grid g2" style="margin-bottom:16px;">
+        <div class="bd-col being-col">
+          <h3 style="color:#6D28D9; justify-content:space-between;"><span>Being</span><span class="add-btn" onclick="togglePrincipleForm('being')" data-icon="plus"></span></h3>
+          <div class="small" style="margin-bottom:10px;">社交 · 物品 · 学习 · 爱好</div>
+          <div class="inline-form" id="principleForm-being">
+            <input class="eod-input" id="principleDomain-being" placeholder="领域，如 学习/社交/物品/爱好" style="margin-bottom:8px;">
+            <input class="eod-input" id="principleText-being" placeholder="原则内容">
+            <div class="cmd-btn" style="display:inline-flex; margin-top:8px;" onclick="submitPrinciple('being')">添加</div>
+          </div>
+          <div id="principleList-being">
+            <div class="principle-chip editable" onclick="makeEditable(this)">学习：结构化沉淀优于囤积闪念</div>
+            <div class="principle-chip editable" onclick="makeEditable(this)">社交：真诚记录，不做关系量化</div>
+            <div class="principle-chip editable" onclick="makeEditable(this)">爱好：主动挑选体验，拒绝被动刷手机</div>
+          </div>
+        </div>
+        <div class="bd-col doing-col">
+          <h3 style="color:var(--accent-deep); justify-content:space-between;"><span>Doing</span><span class="add-btn" onclick="togglePrincipleForm('doing')" data-icon="plus"></span></h3>
+          <div class="small" style="margin-bottom:10px;">工作 · 财务 · 投资 · 日程</div>
+          <div class="inline-form" id="principleForm-doing">
+            <input class="eod-input" id="principleDomain-doing" placeholder="领域，如 工作/财务/投资/日程" style="margin-bottom:8px;">
+            <input class="eod-input" id="principleText-doing" placeholder="原则内容">
+            <div class="cmd-btn" style="display:inline-flex; margin-top:8px;" onclick="submitPrinciple('doing')">添加</div>
+          </div>
+          <div id="principleList-doing">
+            <div class="principle-chip editable" onclick="makeEditable(this)">工作：今日焦点不超过 3 件</div>
+            <div class="principle-chip editable" onclick="makeEditable(this)">投资：先观察列表，后纪律建仓</div>
+            <div class="principle-chip editable" onclick="makeEditable(this)">财务：不因为便宜而囤货</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Life Changelog 个人演进日志 <span class="add-btn" onclick="toggleChangelogForm()" data-icon="plus"></span></h3>
+        <div class="inline-form" id="changelogForm">
+          <div class="type-row" id="changelogTypes">
+            <div class="type-pill selected" data-type="认知重塑">认知重塑</div>
+            <div class="type-pill" data-type="战略转向">战略转向</div>
+            <div class="type-pill" data-type="交租教训">交租教训</div>
+            <div class="type-pill" data-type="重大突破">重大突破</div>
+          </div>
+          <input class="eod-input" id="changelogDomain" placeholder="关联领域，如 #工作 #投资" style="margin-bottom:8px;">
+          <input class="eod-input" id="changelogContent" placeholder="记录这次演进的具体内容">
+          <div class="cmd-btn" style="display:inline-flex; margin-top:10px;" onclick="submitChangelog()">添加到演进日志</div>
+        </div>
+        <div class="timeline" id="changelogTimeline">
+          <div class="tl-slot">
+            <div class="tl-time">v2026.07 · 战略转向 · #工作</div>
+            <div class="tl-title">日程模块重新定位为"唯一排期权"，其余模块只生产任务</div>
+          </div>
+          <div class="tl-slot">
+            <div class="tl-time">v2026.06 · 交租教训 · #投资</div>
+            <div class="tl-title">追高未设止损导致回撤，固化"先观察列表后建仓"硬性纪律</div>
+          </div>
+          <div class="tl-slot">
+            <div class="tl-time">v2026.05 · 认知重塑 · #社交</div>
+            <div class="tl-title">意识到断联倒计时会让关系变得功利，改为仅记录重要日期</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ WORK ============ -->
+    <div class="view" id="view-work">
+      <div class="card" style="margin-bottom:16px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div style="font-weight:700; font-size:13px;">高杠杆，低负荷</div>
+          <div class="small">今日 Top3 从 Q1+Q2 中手动挑选 · 本周加班 6.5h / 15h</div>
+        </div>
+        <div class="progress" style="width:180px;"><div class="progress-fill" style="width:43%;"></div></div>
+      </div>
+      <div class="grid g2" style="margin-bottom:16px;">
+        <div class="quad q1">
+          <h4>Q1 重要且紧急 <span class="chip crimson">限2件</span> <span class="add-btn" onclick="toggleWorkForm('Q1')" data-icon="plus"></span></h4>
+          <div class="inline-form" id="workForm-Q1"><input class="eod-input" id="workInput-Q1" placeholder="任务名 @优先级 #项目"><div class="cmd-btn" style="display:inline-flex;margin-top:8px" onclick="submitWorkTask('Q1')">添加任务</div></div>
+          <div class="task-card"><span class="editable">客户环境部署报错修复</span> <span class="chip crimson" style="float:right;">已延期</span></div>
+          <div class="task-card editable">日程排期引擎数据结构</div>
+        </div>
+        <div class="quad q2">
+          <h4>Q2 重要不紧急 <span class="chip sky">黄金攻坚区</span> <span class="add-btn" onclick="toggleWorkForm('Q2')" data-icon="plus"></span></h4>
+          <div class="inline-form" id="workForm-Q2"><input class="eod-input" id="workInput-Q2" placeholder="任务名 @优先级 #项目"><div class="cmd-btn" style="display:inline-flex;margin-top:8px" onclick="submitWorkTask('Q2')">添加任务</div></div>
+          <div class="task-card editable">交易观察列表安全价逻辑 #LifeOS</div>
+          <div class="task-card editable">学习模块里程碑设计 #LifeOS</div>
+        </div>
+        <div class="quad q3">
+          <h4>Q3 紧急不重要 <span class="add-btn" onclick="toggleWorkForm('Q3')" data-icon="plus"></span></h4>
+          <div class="inline-form" id="workForm-Q3"><input class="eod-input" id="workInput-Q3" placeholder="任务名 @优先级 #项目"><div class="cmd-btn" style="display:inline-flex;margin-top:8px" onclick="submitWorkTask('Q3')">添加任务</div></div>
+          <div class="task-card editable">填报本月报销单</div>
+        </div>
+        <div class="quad q4">
+          <h4>Q4 不紧急不重要 <span class="chip amber">7天未动</span> <span class="add-btn" onclick="toggleWorkForm('Q4')" data-icon="plus"></span></h4>
+          <div class="inline-form" id="workForm-Q4"><input class="eod-input" id="workInput-Q4" placeholder="任务名 @优先级 #项目"><div class="cmd-btn" style="display:inline-flex;margin-top:8px" onclick="submitWorkTask('Q4')">添加任务</div></div>
+          <div class="task-card editable">整理旧项目归档文件夹</div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:16px;">
+        <h3>EOD 日终总结</h3>
+        <div style="display:flex; gap:10px; margin-bottom:10px;">
+          <div>
+            <div class="small" style="margin-bottom:4px;">加班时长</div>
+            <input class="eod-input eod-input-num" id="eodHours" type="text" placeholder="1.5h">
+          </div>
+        </div>
+        <div class="small" style="margin-bottom:4px;">完成</div>
+        <input class="eod-input" id="eodDone" placeholder="今日完成了什么">
+        <div class="small" style="margin:8px 0 4px;">明天计划</div>
+        <input class="eod-input" id="eodPlan" placeholder="明天推进什么，将直接生成明日待办">
+        <div class="small" style="margin:8px 0 4px;">收获</div>
+        <input class="eod-input" id="eodGain" placeholder="今天的收获，存入待筛选池，本周六批量沉淀">
+        <div class="cmd-btn" style="display:inline-flex; margin-top:12px;" onclick="submitEod()">提交今日 EOD</div>
+      </div>
+      <div class="card">
+        <h3>EOD 历史时间轴 <span class="tag">可回顾</span></h3>
+        <div class="timeline" id="eodTimeline">
+          <div class="tl-slot">
+            <div class="tl-time">2026-07-24 · 加班 1.5h</div>
+            <div class="tl-title">完成：SQLite 表结构设计</div>
+            <div class="small">明天：推进日程排期引擎　·　收获：Tauri IPC 传参用 JSON 字符串更稳定 <span class="chip sky">待周六筛选</span></div>
+          </div>
+          <div class="tl-slot">
+            <div class="tl-time">2026-07-23 · 加班 0.5h</div>
+            <div class="tl-title">完成：四象限看板交互调整</div>
+            <div class="small">明天：SQLite 表结构设计　·　收获：SOP 约束应做数据库外键而非UI提示 <span class="chip sky">待周六筛选</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ SCHEDULE ============ -->
+    <div class="view" id="view-schedule">
+      <div class="card" style="margin-bottom:16px;">
+        <div class="schedule-tabs" style="margin-bottom:8px">
+          <button class="schedule-tab active" data-schedule-view="day" onclick="switchScheduleView('day')">日视图</button>
+          <button class="schedule-tab" data-schedule-view="week" onclick="switchScheduleView('week')">周视图</button>
+          <button class="schedule-tab" data-schedule-view="month" onclick="switchScheduleView('month')">月视图</button>
+        </div>
+        <div class="small">日程模块拥有唯一排期权 — 其余模块只生产任务，由此处手动拖入具体时间</div>
+      </div>
+      <div class="grid schedule-layout">
+        <div class="card">
+          <div class="schedule-panel active" id="schedule-day"><h3>今日时间轴 <span class="tag">15 分钟吸附 · 拖底部调整时长</span></h3><div id="scheduleTimeline"></div></div>
+          <div class="schedule-panel" id="schedule-week"><h3>本周安排 <span class="tag">拖入某一天</span></h3><div class="week-grid" id="scheduleWeekGrid"></div></div>
+          <div class="schedule-panel" id="schedule-month"><h3>本月概览 <span class="tag">拖入某一日</span></h3><div class="calendar-grid" id="scheduleMonthGrid"></div></div>
+        </div>
+        <div class="card">
+          <h3>待排期池 <span class="tag">按来源模块</span></h3>
+          <div id="schedulePool" class="pool-return">
+            <section class="pool-module" data-module="work"><div class="pool-module-head"><span>工作</span><span class="pool-count">4</span></div>
+              <div class="pool-item" draggable="true" data-task-id="work-q1" data-module="work" data-quadrant="Q1"><span>客户环境部署修复</span><span><span class="quadrant-badge">Q1</span> <span class="drag-hint">拖动</span></span></div>
+              <div class="pool-item" draggable="true" data-task-id="work-q2" data-module="work" data-quadrant="Q2"><span>交易观察列表安全价逻辑</span><span><span class="quadrant-badge">Q2</span> <span class="drag-hint">拖动</span></span></div>
+              <div class="pool-item" draggable="true" data-task-id="work-q3" data-module="work" data-quadrant="Q3"><span>填报本月报销单</span><span><span class="quadrant-badge">Q3</span> <span class="drag-hint">拖动</span></span></div>
+              <div class="pool-item" draggable="true" data-task-id="work-q4" data-module="work" data-quadrant="Q4"><span>整理旧项目归档</span><span><span class="quadrant-badge">Q4</span> <span class="drag-hint">拖动</span></span></div>
+            </section>
+            <section class="pool-module" data-module="learning"><div class="pool-module-head"><span>学习</span><span class="pool-count">1</span></div><div class="pool-item" draggable="true" data-task-id="learn-1" data-module="learning"><span>阅读《估值的艺术》第3章</span><span class="drag-hint">拖动</span></div></section>
+            <section class="pool-module" data-module="items"><div class="pool-module-head"><span>物品</span><span class="pool-count">1</span></div><div class="pool-item" draggable="true" data-task-id="item-1" data-module="items"><span>咖啡豆库存补充</span><span class="drag-hint">拖动</span></div></section>
+            <section class="pool-module" data-module="network"><div class="pool-module-head"><span>社交</span><span class="pool-count">1</span></div><div class="pool-item" draggable="true" data-task-id="network-1" data-module="network"><span>老王生日礼物准备</span><span class="drag-hint">拖动</span></div></section>
+          </div>
+          <div class="small" style="margin-top:8px;">拖动任务到左侧排期；将已排期任务拖回此处可撤销排期</div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px;">
+        <h3>新增生活日程 <span class="tag">模块内录入 · 重复日程</span></h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+          <input class="eod-input" id="scheduleTitle" placeholder="事件名称" style="flex:2;min-width:220px">
+          <select class="eod-input" id="scheduleFrequency" style="flex:1;min-width:130px" onchange="updateScheduleFrequencyFields();renderLifeSchedulePreview()">
+            <option value="daily">每天</option>
+            <option value="weekly">每周</option>
+            <option value="monthly">每月</option>
+            <option value="biweekly">每两周</option>
+          </select>
+          <select class="eod-input" id="scheduleWeekday" style="flex:1;min-width:120px;display:none" onchange="renderLifeSchedulePreview()">
+            <option value="1">周一</option><option value="2">周二</option><option value="3">周三</option><option value="4">周四</option><option value="5">周五</option><option value="6">周六</option><option value="0">周日</option>
+          </select>
+          <input class="eod-input" id="scheduleMonthDay" type="number" min="1" max="31" value="1" style="flex:1;min-width:110px;display:none" aria-label="每月日期" oninput="renderLifeSchedulePreview()">
+          <input class="eod-input" id="scheduleStart" type="time" value="09:00" style="flex:1;min-width:120px" aria-label="开始时间" oninput="renderLifeSchedulePreview()">
+        </div>
+        <div class="small" style="margin:12px 0 6px">已创建的生活日程模板 · 仅可在此修改或删除</div>
+        <div id="lifeScheduleTemplates"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin:12px 0 6px">
+          <div class="small">当日生活时间线 · 汇总所有已添加的生活日程</div>
+          <input class="eod-input" id="lifePreviewDate" type="date" style="width:150px" aria-label="预览日期" onchange="renderLifeSchedulePreview()">
+        </div>
+        <div class="timeline" id="lifeSchedulePreview"></div>
+        <div class="cmd-btn" id="lifeScheduleSubmit" style="display:inline-flex;margin-top:10px" onclick="submitScheduleEvent()">添加生活日程</div>
+      </div>
+    </div>
+
+    <!-- ============ FINANCE ============ -->
+    <div class="view" id="view-finance">
+      <div class="grid g3" style="margin-bottom:16px;">
+        <div class="card" id="budgetCard">
+          <h3>月度预算</h3>
+          <div class="mono" style="font-size:18px; font-weight:700;"><span id="spentAmount">$2,460</span> / <span id="budgetAmount" class="editable" onclick="editBudget(this)">$3,000</span></div>
+          <div class="progress" style="margin:8px 0;"><div class="progress-fill amber" id="budgetBar" style="width:82%;"></div></div>
+          <span class="chip amber" id="budgetChip">已用 82%</span>
+          <div class="small" id="budgetPace" style="margin-top:8px"></div>
+        </div>
+        <div class="card">
+          <h3>周期订阅预警</h3>
+          <div class="row"><span>ChatGPT Plus</span><span class="chip amber">3天后扣费</span></div>
+          <div class="row"><span>iCloud 200G</span><span class="small">12天后</span></div>
+        </div>
+        <div class="card">
+          <h3>今日支出</h3>
+          <div class="mono" style="font-size:18px; font-weight:700;" id="todaySpent">-$35.00</div>
+          <div class="small" id="todaySpentNote">买猫粮 · 自动归类 #宠物耗材</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px;">
+        <h3>快捷记账</h3>
+        <div style="display:flex; gap:10px; margin-bottom:8px;">
+          <input class="eod-input" id="finAmount" placeholder="金额，如 -35 或 +200" style="flex:1;">
+          <input class="eod-input" id="finNote" placeholder="备注，如 买猫粮" style="flex:2;">
+        </div>
+        <div class="type-row" style="margin-bottom:10px;" id="finNecessity">
+          <div class="type-pill selected" data-necessity="必要">必要支出</div>
+          <div class="type-pill" data-necessity="非必要">非必要支出</div>
+        </div>
+        <div class="small" style="margin-bottom:8px;">标记为"非必要"的支出不会立刻计入本月消费，会先进入下方队列，等月底看预算是否有盈余再决定是否放行</div>
+        <div class="cmd-btn" style="display:inline-flex;" onclick="submitFinance()">记一笔</div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px;">
+        <h3>非必要支出待评估队列 <span class="tag">月底统一结算</span></h3>
+        <div id="pendingList">
+          <div class="row"><span>-$128　蓝牙耳机（想换新的，非必需）</span><span class="chip sky">待月底评估</span></div>
+        </div>
+        <div class="cmd-btn" style="display:inline-flex; margin-top:10px;" onclick="settleMonthEnd()">模拟月末结算</div>
+        <div class="small" id="settleResult" style="margin-top:8px;"></div>
+      </div>
+
+      <div class="grid g2">
+        <div class="card">
+          <h3>一进一出拦截示例</h3>
+          <div style="background:var(--amber-tint); border-radius:10px; padding:12px; font-size:12px;">
+            检测到支出 <b>-$200 买新外套</b>（#服饰）<br>
+            触发【一进一出】原则：请在物品库中指定 1 件旧衣物标记为已清理/闲置
+          </div>
+        </div>
+        <div class="card">
+          <h3>防囤货拦截示例</h3>
+          <div style="background:var(--amber-tint); border-radius:10px; padding:12px; font-size:12px;">
+            检测到支出 <b>-$50 买洗发水 3瓶</b><br>
+            当前库存尚有 2 瓶（预计可用 50 天），确认仍要购买吗？
+            <div class="small" style="margin-top:6px;">冷启动期样本不足时不拦截，累积消耗数据后自动推算周期</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ ITEMS ============ -->
+    <div class="view" id="view-items">
+      <div class="card" id="itemFormCard" style="margin-bottom:16px;">
+        <h3>添加物品/资产</h3>
+        <div class="type-row" id="itemTypes" style="margin-bottom:10px;">
+          <div class="type-pill selected" data-type="消耗品">消耗品</div>
+          <div class="type-pill" data-type="保养品">保养品</div>
+          <div class="type-pill" data-type="使用时期">使用时期品</div>
+          <div class="type-pill" data-type="固定资产">固定资产</div>
+          <div class="type-pill" data-type="食物">食物</div>
+        </div>
+        <div style="display:flex; gap:10px; margin-bottom:8px;">
+          <input class="eod-input" id="itemName" placeholder="物品名称" style="flex:1;">
+          <input class="eod-input" id="itemDetail" placeholder="关键信息，如库存数量/开封日期+使用时期/购入日期+保修期" style="flex:2;">
+        </div>
+        <div style="display:flex;gap:10px;margin-bottom:8px">
+          <input class="eod-input" id="itemLocation" placeholder="存放位置，如 厨房上层 / 卧室抽屉" style="flex:1">
+          <input class="eod-input" id="foodExpiry" type="date" aria-label="食物到期日" style="flex:1;display:none">
+        </div>
+        <div class="cmd-btn" style="display:inline-flex;" onclick="submitItem()">保存</div>
+      </div>
+      <div class="card" style="margin-bottom:16px">
+        <h3>食物清单 <span class="tag">全部展示 · 保质期预警</span></h3>
+        <div id="foodList">
+          <div class="food-row" data-expiry="2026-08-04"><span class="editable">鲜牛奶</span><span class="editable">冰箱冷藏层</span><input class="food-expiry" type="date" value="2026-08-04" aria-label="鲜牛奶到期日"><span class="food-status"></span></div>
+          <div class="food-row" data-expiry="2026-08-18"><span class="editable">鸡蛋</span><span class="editable">冰箱蛋架</span><input class="food-expiry" type="date" value="2026-08-18" aria-label="鸡蛋到期日"><span class="food-status"></span></div>
+        </div>
+      </div>
+      <div class="grid g4" id="itemsGrid">
+        <div class="card alert-crimson pulse-crimson">
+          <h3><span class="editable" onclick="makeEditable(this)">猫粮</span> <span class="chip amber">3天后耗尽</span></h3>
+          <div class="progress"><div class="progress-fill amber" style="width:20%;"></div></div>
+          <div class="small item-detail editable" onclick="makeEditable(this)" style="margin-top:6px;">消耗速率基于近 4 次购买记录推算 · 位置：储物间</div>
+        </div>
+        <div class="card">
+          <h3><span class="editable" onclick="makeEditable(this)">净水器滤芯</span> <span class="tag">保养品</span></h3>
+          <div class="small item-detail editable" onclick="makeEditable(this)">上次更换：62 天前 · 周期 90 天 · 位置：厨房水槽下</div>
+          <div class="progress" style="margin-top:8px;"><div class="progress-fill" style="width:69%;"></div></div>
+        </div>
+        <div class="card alert-crimson pulse-crimson">
+          <h3><span class="editable" onclick="makeEditable(this)">维生素C精华</span> <span class="chip crimson">5天后到期</span></h3>
+          <div class="small item-detail editable" onclick="makeEditable(this)">开封日期：2026-04-20 · 使用时期 3 个月 · 位置：浴室镜柜</div>
+          <div class="progress" style="margin-top:8px;"><div class="progress-fill crimson" style="width:94%;"></div></div>
+          <div class="small" style="margin-top:6px;">临期提示：不同于消耗品的用量预测，按开封后固定使用时期倒计时</div>
+        </div>
+        <div class="card">
+          <h3><span class="editable" onclick="makeEditable(this)">MacBook Pro</span> <span class="tag">固定资产</span></h3>
+          <div class="small item-detail editable" onclick="makeEditable(this)">购入：2024-03 · 保修至 2027-03 · 位置：书房</div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px;">
+        <h3>学习期样本采集中</h3>
+        <div class="row"><span>洗发水（样本 1/3，暂不预测周期）</span><span class="chip sky">采集中</span></div>
+        <div class="row"><span>咖啡豆（样本 4，已可推算）</span><span class="chip emerald">预测生效</span></div>
+      </div>
+      <div class="card" style="margin-top:16px;">
+        <h3>临期提示队列 <span class="tag">按使用时期倒计时</span></h3>
+        <div class="row"><span>维生素C精华（开封后3个月）</span><span class="chip crimson">5天后到期</span></div>
+        <div class="row"><span>眼霜（开封后6个月）</span><span class="chip amber">23天后到期</span></div>
+        <div class="row"><span>防晒霜（开封后12个月）</span><span class="chip sky">尚有 214 天</span></div>
+      </div>
+    </div>
+
+    <!-- ============ NETWORK ============ -->
+    <div class="view" id="view-network">
+      <div class="card" style="margin-bottom:16px;">
+        <h3>添加联系人 / 记录互动</h3>
+        <div style="display:flex; gap:10px; margin-bottom:8px;">
+          <input class="eod-input" id="netName" placeholder="姓名" style="flex:1;">
+          <input class="eod-input" id="netRelation" placeholder="关系，如大学同学/前同事" style="flex:1;">
+        </div>
+        <input class="eod-input" id="netNote" placeholder="偏好/互动内容/近况" style="margin-bottom:8px;">
+        <input class="eod-input" id="netDate" placeholder="重要日期（可选），如 生日 08-15">
+        <div class="cmd-btn" style="display:inline-flex; margin-top:10px;" onclick="submitPerson()">保存</div>
+      </div>
+      <div class="grid g2" id="networkGrid">
+        <div class="person-card">
+          <div style="display:flex; gap:10px; align-items:center;">
+            <div class="person-avatar">王</div>
+            <div>
+              <div style="font-weight:700; font-size:13.5px;" class="person-name editable" onclick="makeEditable(this)">老王</div>
+              <div class="small person-relation editable" onclick="makeEditable(this)">大学同学 · 上次互动：3周前</div>
+            </div>
+            <span class="chip amber" style="margin-left:auto;">3天后生日</span>
+          </div>
+          <div style="margin-top:10px; font-size:12px; color:var(--text);" class="person-note editable" onclick="makeEditable(this)">
+            偏好：不吃香菜，喜欢手冲咖啡 · 上次聊到想学 Rust
+          </div>
+        </div>
+        <div class="person-card">
+          <div style="display:flex; gap:10px; align-items:center;">
+            <div class="person-avatar">明</div>
+            <div>
+              <div style="font-weight:700; font-size:13.5px;" class="person-name editable" onclick="makeEditable(this)">小明</div>
+              <div class="small person-relation editable" onclick="makeEditable(this)">前同事 · 上次互动：昨天</div>
+            </div>
+          </div>
+          <div style="margin-top:10px; font-size:12px; color:var(--text);" class="person-note editable" onclick="makeEditable(this)">
+            推荐了《罗杰疑案》，猫叫"咪咪"
+          </div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px;">
+        <div class="small">已取消断联倒计时机制 — 仅基于具体日期（生日/自定义重大事件）触发提醒，不对关系做量化打分</div>
+      </div>
+    </div>
+
+    <!-- ============ TRADE ============ -->
+    <div class="view" id="view-trade">
+      <div class="card" style="margin-bottom:16px; background:var(--accent-tint);">
+        <div class="small" style="font-weight:700; color:var(--accent-deep);">SOP：观察列表 → 到达安全价 → 纪律建仓 → 策略卖出/止损 → 每日复盘</div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px;">
+        <h3>观察列表 <span class="tag">后台轮询新浪行情</span></h3>
+        <div class="inline-form" id="watchForm" style="margin-top:8px;">
+          <div style="display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
+            <input class="eod-input" id="wCode" placeholder="代码 如 600519" style="width:110px;">
+            <input class="eod-input" id="wName" placeholder="名称" style="width:110px;">
+            <input class="eod-input" id="wTarget" placeholder="目标价" style="width:90px;">
+            <input class="eod-input" id="wSafety" placeholder="安全价" style="width:90px;">
+            <input class="eod-input" id="wCurrent" placeholder="现价" style="width:90px;">
+          </div>
+          <div class="cmd-btn" style="display:inline-flex;" onclick="submitWatch()">加入观察列表</div>
+        </div>
+        <div class="watch-head">
+          <span>代码/名称</span><span>目标价</span><span>安全价</span><span>现价</span><span style="margin-left:auto;">状态</span>
+        </div>
+        <div id="watchList"></div>
+        <span class="add-btn" onclick="toggleWatchForm()" data-icon="plus" style="margin-top:8px;"></span>
+      </div>
+
+      <div class="card" style="margin-bottom:16px;">
+        <h3>持仓管理 <span class="tag">仅限观察列表选股</span></h3>
+        <div class="inline-form" id="posForm" style="margin-top:8px;">
+          <div style="display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap; align-items:center;">
+            <select class="eod-input" id="posCode" style="width:160px;"></select>
+            <input class="eod-input" id="posPrice" placeholder="建仓价" style="width:100px;">
+            <input class="eod-input" id="posStop" placeholder="止损价" style="width:100px;">
+          </div>
+          <div class="cmd-btn" style="display:inline-flex;" onclick="submitPosition()">分批建仓</div>
+        </div>
+        <div id="posList">
+          <div class="row"><span class="mono">002230 科大讯飞</span><span class="chip emerald">+6.2%</span></div>
+          <div class="small">分批建仓 2 次，均价 ¥38.20，止损 ¥34.00</div>
+        </div>
+        <span class="add-btn" onclick="togglePosForm()" data-icon="plus" style="margin-top:8px;"></span>
+      </div>
+
+      <div class="card">
+        <h3>每日复盘（单行指令，按日颗粒度）</h3>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <input class="eod-input" id="tradeReviewInput" placeholder="记录大盘/持仓观察，以及有无操作和逻辑" style="flex:1">
+          <button class="cmd-btn" style="border:0" onclick="submitTradeReview()">保存今日复盘</button>
+        </div>
+        <div class="timeline" id="tradeReviewTimeline">
+          <div class="tl-slot" data-review-date="2026-07-25">
+            <div class="tl-time">2026-07-25</div>
+            <div class="tl-title">大盘震荡，茅台触及安全价，暂不加仓观察量能</div>
+          </div>
+          <div class="tl-slot" data-review-date="2026-07-24">
+            <div class="tl-time">2026-07-24</div>
+            <div class="tl-title">科大讯飞加仓 100股 @37.50，逻辑：回踩年线企稳 <span class="chip sky">含交易明细</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ LEARNING ============ -->
+    <div class="view" id="view-learning">
+      <div class="card" id="learningFormCard" style="margin-bottom:16px;">
+        <h3>新建学习领域</h3>
+        <div class="type-row" id="learnTypes" style="display:none;">
+          <div class="type-pill selected" data-type="领域">学习领域</div>
+          <div class="type-pill" data-type="任务">学习任务</div>
+          <div class="type-pill" data-type="闪念">闪念</div>
+        </div>
+        <div style="display:flex; gap:10px; margin-bottom:8px;">
+          <input class="eod-input" id="learnMain" placeholder="学习领域名称" style="flex:2;">
+          <div class="select-shell" style="display:none">
+            <select class="styled-select" id="learnSub" aria-label="关联学习领域">
+              <option value="">不关联领域</option>
+              <option value="Java/Kafka 深化">Java/Kafka 深化</option>
+              <option value="A股量化方法论">A股量化方法论</option>
+            </select>
+            <button type="button" class="custom-select-trigger" id="learnSubTrigger" onclick="toggleLearningDomainDropdown()">不关联领域</button>
+            <div class="custom-select-menu" id="learnSubMenu" role="listbox"></div>
+          </div>
+        </div>
+        <div class="cmd-btn" style="display:inline-flex;" onclick="submitLearning()">保存</div>
+      </div>
+
+      <div class="grid g3" style="margin-bottom:16px;" id="domainGrid">
+        <div class="card learning-domain-card" data-domain="Java/Kafka 深化">
+          <h3 class="domain-title">#Java/Kafka 深化</h3>
+          <div class="small" style="margin-bottom:8px;">里程碑 2/4</div>
+          <div class="progress"><div class="progress-fill" style="width:50%;"></div></div>
+        </div>
+        <div class="card learning-domain-card" data-domain="A股量化方法论">
+          <h3 class="domain-title">#A股量化方法论</h3>
+          <div class="small" style="margin-bottom:8px;">里程碑 1/3</div>
+          <div class="progress"><div class="progress-fill amber" style="width:33%;"></div></div>
+        </div>
+        <div class="card" style="display:none">
+          <h3>本周投入</h3>
+          <div class="row"><span>完成任务</span><span class="mono">4 个</span></div>
+          <div class="row"><span>累计时长</span><span class="mono">3.2h</span></div>
+        </div>
+      </div>
+
+      <div class="card" style="display:none">
+        <h3>学习任务待排期池 <span class="tag">先记录后排期</span></h3>
+        <div id="learnTaskPool">
+          <div class="pool-item"><span>阅读《估值的艺术》第3章 #A股量化方法论</span><span class="drag-hint">拖入日程 →</span></div>
+        </div>
+      </div>
+
+      <div class="card" style="display:none">
+        <h3>Read & Inbox <span class="tag">闪念 + 工作收获 合并表</span></h3>
+        <div id="readInboxList">
+          <div class="row"><span class="editable" onclick="makeEditable(this)">Tauri IPC 传参用 JSON 字符串更稳定</span><span class="chip sky">来源：工作EOD</span></div>
+          <div class="row"><span class="editable" onclick="makeEditable(this)">倒过来想，总是倒过来想</span><span class="chip violet">来源：闪念</span></div>
+          <div class="row"><span class="editable" onclick="makeEditable(this)">SOP 约束应做数据库外键而非UI提示</span><span class="chip sky">来源：工作EOD · 待周六筛选</span></div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="hint">Life-OS 交互原型 v2.1 · 点击左侧模块或 ⌥Space 唤醒命令面板体验</footer>
+  </div>
+</div>
+
+<!-- ============ COMMAND PALETTE ============ -->
+<div class="overlay" id="overlay">
+  <div class="palette">
+    <input class="palette-input" id="paletteInput" placeholder="直接输入，或在下方选择分类自动填充示例" autocomplete="off">
+    <div class="palette-hint">回车提交 · Esc 取消</div>
+    <div class="palette-hint" style="margin-top:8px; margin-bottom:6px; padding:0;">点击分类，自动填充示例到上方输入框</div>
+    <div class="cat-grid" id="catGrid">
+      <div class="cat-item" onclick="selectCat('work', this)"><span class="ic icon" data-icon="briefcase"></span>工作</div>
+      <div class="cat-item" onclick="goToEodForm()"><span class="ic icon" data-icon="briefcase"></span>工作-EOD</div>
+      <div class="cat-item" onclick="selectCat('schedule', this)"><span class="ic icon" data-icon="calendar"></span>日程</div>
+      <div class="cat-item" onclick="selectCat('finance-out', this)"><span class="ic icon" data-icon="wallet"></span>财务-支出</div>
+      <div class="cat-item" onclick="selectCat('items', this)"><span class="ic icon" data-icon="package"></span>物品</div>
+      <div class="cat-item" onclick="selectCat('network', this)"><span class="ic icon" data-icon="users"></span>社交</div>
+      <div class="cat-item" onclick="selectCat('trade-review', this)"><span class="ic icon" data-icon="trendingUp"></span>投资-复盘</div>
+      <div class="cat-item" onclick="selectCat('learning-flash', this)"><span class="ic icon" data-icon="bookOpen"></span>学习-闪念</div>
+    </div>
+    <div id="subArea" style="display:none; margin-top:8px;">
+      <div class="sub-grid" id="subGrid"></div>
+    </div>
+  </div>
+</div>
+<div class="domain-detail-overlay" id="domainDetailOverlay">
+  <section class="domain-detail-panel" aria-labelledby="domainDetailTitle">
+    <div class="domain-detail-head"><div><button class="text-action" onclick="closeDomainDetail()">← 返回领域列表</button><div class="small" style="margin-top:14px">学习领域工作区</div><h2 id="domainDetailTitle" style="font-size:22px;margin-top:4px"></h2></div></div>
+    <div class="domain-workspace-grid">
+      <div class="domain-workspace-section"><div class="small" style="margin-bottom:5px">基本信息</div><textarea class="eod-input" id="domainDetailSummary" rows="4" placeholder="这个领域为什么重要、当前学习方向是什么" onblur="saveDomainSummary()"></textarea><h3 style="font-size:13px;margin:20px 0 8px">里程碑 <span class="tag" id="domainMilestoneProgress"></span></h3><div class="domain-detail-list" id="domainMilestoneList"></div><div style="display:flex;gap:8px"><input class="eod-input" id="domainMilestoneInput" placeholder="新增里程碑"><button class="cmd-btn" style="border:0;white-space:nowrap" onclick="addDomainDetailItem('milestones')">添加</button></div></div>
+      <div class="domain-workspace-section"><h3 style="font-size:13px;margin-bottom:8px">阶段性任务</h3><div class="domain-detail-list" id="domainStageTaskList"></div><div style="display:flex;gap:8px"><input class="eod-input" id="domainStageTaskInput" placeholder="新增当前阶段任务"><button class="cmd-btn" style="border:0;white-space:nowrap" onclick="addDomainDetailItem('tasks')">添加</button></div></div>
+    </div>
+  </section>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const STORAGE_KEY = 'life-os:mvp:v2';
+let lifeSchedules = [];
+let editingLifeScheduleId = '';
+let scheduledTasks = [];
+let learningDomainDetails = {};
+let activeLearningDomain = '';
+const escapeHTML = value => String(value).replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
+function notify(message, type='ok'){
+  const toast = document.getElementById('toast');
+  toast.textContent = message; toast.className = `toast show ${type==='error'?'error':''}`;
+  clearTimeout(notify.timer); notify.timer = setTimeout(()=>toast.className='toast', 2200);
+}
+function sanitizeStoredHTML(html){
+  const template = document.createElement('template'); template.innerHTML = String(html || '');
+  template.content.querySelectorAll('script,style,iframe,object,embed,link,meta').forEach(el=>el.remove());
+  template.content.querySelectorAll('*').forEach(el=>[...el.attributes].forEach(attr=>{
+    if(/^on/i.test(attr.name) || ['src','href','srcdoc'].includes(attr.name.toLowerCase())) el.removeAttribute(attr.name);
+  }));
+  return template.innerHTML;
+}
+const persistedIds = ['principleList-being','principleList-doing','changelogTimeline','eodTimeline','itemsGrid','foodList','networkGrid','posList','tradeReviewTimeline','domainGrid','learnTaskPool','readInboxList','schedulePool'];
+function persistApp(){
+  const html = Object.fromEntries(persistedIds.map(id=>[id,document.getElementById(id)?.innerHTML || '']));
+  html.workQuadrants = [...document.querySelectorAll('#view-work .quad')].map(el=>[...el.querySelectorAll(':scope > .task-card')].map(card=>card.outerHTML));
+  html.dashboardTodos = document.getElementById('todoList')?.innerHTML || '';
+  const state = {html, budgetLimit, spentTotal, pendingItems, watchlist, lifeSchedules, scheduledTasks, learningDomainDetails};
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch{ notify('本地保存失败，请检查浏览器存储空间','error'); }
+}
+function restoreApp(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY); if(!raw) return;
+    const state = JSON.parse(raw);
+    if(state.html) persistedIds.forEach(id=>{ if(state.html[id] && document.getElementById(id)) document.getElementById(id).innerHTML=sanitizeStoredHTML(state.html[id]); });
+    [...document.querySelectorAll('#view-work .quad')].forEach((el,i)=>{
+      const saved=state.html?.workQuadrants?.[i];
+      if(Array.isArray(saved)){ el.querySelectorAll(':scope > .task-card').forEach(card=>card.remove()); saved.forEach(card=>el.insertAdjacentHTML('beforeend',sanitizeStoredHTML(card))); }
+    });
+    const todos = document.getElementById('todoList'); if(todos && state.html?.dashboardTodos) todos.innerHTML=sanitizeStoredHTML(state.html.dashboardTodos);
+    if(Number.isFinite(state.budgetLimit) && state.budgetLimit>0) budgetLimit=state.budgetLimit;
+    if(Number.isFinite(state.spentTotal) && state.spentTotal>=0) spentTotal=state.spentTotal;
+    if(Array.isArray(state.pendingItems)) pendingItems=state.pendingItems.filter(x=>Number.isFinite(x.amount) && typeof x.note==='string');
+    if(Array.isArray(state.watchlist)) watchlist=state.watchlist.filter(x=>typeof x.code==='string' && [x.target,x.safety,x.current].every(Number.isFinite));
+    if(Array.isArray(state.lifeSchedules)) lifeSchedules=state.lifeSchedules.filter(x=>x && typeof x.id==='string' && /^[A-Za-z0-9._-]{1,80}$/.test(x.id) && typeof x.title==='string' && /^\d{2}:\d{2}$/.test(x.time) && ['daily','weekly','monthly','biweekly'].includes(x.frequency));
+    if(Array.isArray(state.scheduledTasks)) scheduledTasks=state.scheduledTasks.filter(x=>x && typeof x.id==='string' && /^[A-Za-z0-9._-]{1,80}$/.test(x.id) && typeof x.title==='string' && typeof x.date==='string' && typeof x.time==='string');
+    if(state.learningDomainDetails && typeof state.learningDomainDetails==='object'){
+      learningDomainDetails=Object.fromEntries(Object.entries(state.learningDomainDetails).filter(([name])=>typeof name==='string').map(([name,value])=>[name,{summary:typeof value?.summary==='string'?value.summary:'',milestones:Array.isArray(value?.milestones)?value.milestones.filter(x=>x&&typeof x.title==='string').map(x=>({title:x.title,done:Boolean(x.done)})):[],tasks:Array.isArray(value?.tasks)?value.tasks.filter(x=>x&&typeof x.title==='string').map(x=>({title:x.title,done:Boolean(x.done)})):[]}]))
+    }
+  }catch{ notify('本地数据已损坏，已使用安全的演示数据','error'); }
+}
+const SVG_ATTR = 'fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"';
+const ICONS = {
+  home: `<svg viewBox="0 0 24 24" ${SVG_ATTR}><path d="M3 11.5L12 4l9 7.5"/><path d="M5.5 10v9.5a1 1 0 0 0 1 1H9.5v-6h5v6h3a1 1 0 0 0 1-1V10"/></svg>`,
+  compass: `<svg viewBox="0 0 24 24" ${SVG_ATTR}><circle cx="12" cy="12" r="9"/><path d="M15 9l-2.2 5.2L9 16.5l2.2-5.2z"/></svg>`,
+  briefcase: `<svg viewBox="0 0 24 24" ${SVG_ATTR}><rect x="3" y="7.5" width="18" height="12" rx="2"/><path d="M8.5 7.5V6a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v1.5"/><path d="M3 13h18"/></svg>`,
+  calendar: `<svg viewBox="0 0 24 24" ${SVG_ATTR}><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>`,
+  wallet: `<svg viewBox="0 0 24 24" ${SVG_ATTR}><path d="M4 7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M16 12.2h3v3h-3a1.5 1.5 0 0 1 0-3z"/></svg>`,
+  package: `<svg viewBox="0 0 24 24" ${SVG_ATTR}><path d="M21 8L12 3.5 3 8l9 4.5z"/><path d="M3 8v8l9 4.5V12.5"/><path d="M21 8v8l-9 4.5V12.5"/></svg>`,
+  users: `<svg viewBox="0 0 24 24" ${SVG_ATTR}><circle cx="9" cy="8.5" r="3"/><path d="M3.5 20c0-3.3 2.5-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><circle cx="17" cy="9.5" r="2.3"/><path d="M15.5 14.7c2 .4 3.5 2 3.5 4.3"/></svg>`,
+  trendingUp: `<svg viewBox="0 0 24 24" ${SVG_ATTR}><polyline points="3,16 9,10 13,14 21,6"/><polyline points="15,6 21,6 21,12"/></svg>`,
+  bookOpen: `<svg viewBox="0 0 24 24" ${SVG_ATTR}><path d="M12 6.2c-1.8-1.4-4.6-1.8-7.5-1.4v13.6c2.9-.4 5.7 0 7.5 1.4"/><path d="M12 6.2c1.8-1.4 4.6-1.8 7.5-1.4v13.6c-2.9-.4-5.7 0-7.5 1.4"/><path d="M12 6.2v13.6"/></svg>`,
+  zap: `<svg viewBox="0 0 24 24" ${SVG_ATTR}><polygon points="13,2 4,14 11,14 10,22 20,9 13,9"/></svg>`,
+  checkSquare: `<svg viewBox="0 0 24 24" ${SVG_ATTR}><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><polyline points="7.5,12.5 10.5,15.5 16.5,8.5"/></svg>`,
+  alertTriangle: `<svg viewBox="0 0 24 24" ${SVG_ATTR}><path d="M12 3.5l9.3 16H2.7z"/><line x1="12" y1="9.5" x2="12" y2="14"/><circle cx="12" cy="17" r="0.9" fill="currentColor" stroke="none"/></svg>`,
+  plus: `<svg viewBox="0 0 24 24" ${SVG_ATTR}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
+  edit: `<svg viewBox="0 0 24 24" ${SVG_ATTR}><path d="M4 20l1-4.5L15.5 5 19 8.5 8.5 19z"/><path d="M13 7l4 4"/></svg>`
+};
+document.querySelectorAll('[data-icon]').forEach(el=>{
+  el.innerHTML = ICONS[el.dataset.icon] || '';
+});
+
+function toggleTodo(el){ el.classList.toggle('done'); persistApp(); }
+
+function goToEodForm(){
+  closePalette();
+  document.querySelector('.nav-item[data-view="work"]').click();
+  setTimeout(()=>{ document.getElementById('eodDone').focus(); }, 150);
+}
+function submitEod(){
+  const hours = document.getElementById('eodHours').value || '0h';
+  const done = document.getElementById('eodDone').value.trim();
+  const plan = document.getElementById('eodPlan').value.trim();
+  const gain = document.getElementById('eodGain').value.trim();
+  if(!done && !plan && !gain){ return; }
+  const today = new Date();
+  const dateStr = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+  const slot = document.createElement('div');
+  slot.className = 'tl-slot';
+  slot.innerHTML = `
+    <div class="tl-time">${dateStr} · 加班 ${escapeHTML(hours)}</div>
+    <div class="tl-title">完成：${escapeHTML(done || '（未填写）')}</div>
+    <div class="small">明天：${escapeHTML(plan || '（未填写）')}　·　收获：${escapeHTML(gain || '（未填写）')} <span class="chip sky">待周六筛选</span></div>
+  `;
+  const timeline = document.getElementById('eodTimeline');
+  timeline.insertBefore(slot, timeline.firstChild);
+  document.getElementById('eodHours').value='';
+  document.getElementById('eodDone').value='';
+  document.getElementById('eodPlan').value='';
+  document.getElementById('eodGain').value='';
+  if(plan) addWorkTask(plan, 'Q2');
+  if(gain){ const row=document.createElement('div'); row.className='row'; row.innerHTML=`<span class="editable">${escapeHTML(gain)}</span><span class="chip sky">来源：工作EOD · 待周六筛选</span>`; document.getElementById('readInboxList').appendChild(row); }
+  persistApp(); notify('EOD 已保存，计划与收获已联动');
+}
+function addWorkTask(title, quadrant='Q2'){
+  const index = Math.max(0, Math.min(3, Number(String(quadrant).replace('Q',''))-1));
+  const quad = document.querySelectorAll('#view-work .quad')[index];
+  if(!quad || !title.trim()) return false;
+  if(index===0 && quad.querySelectorAll('.task-card').length>=2){ notify('Q1 同时最多 2 件，请先处理现有任务','error'); return false; }
+  const card=document.createElement('div'); card.className='task-card editable'; card.textContent=title.trim(); quad.appendChild(card); persistApp(); return true;
+}
+function toggleWorkForm(quadrant){
+  document.getElementById(`workForm-${quadrant}`)?.classList.toggle('show');
+  setTimeout(()=>document.getElementById(`workInput-${quadrant}`)?.focus(),30);
+}
+function submitWorkTask(quadrant){
+  const input=document.getElementById(`workInput-${quadrant}`); if(!input) return;
+  if(!input.value.trim()){ notify('请输入任务名称','error'); return; }
+  if(addWorkTask(input.value,quadrant)){ input.value=''; document.getElementById(`workForm-${quadrant}`).classList.remove('show'); notify(`${quadrant} 任务已添加`); }
+}
+const scheduleModuleMeta={work:{label:'工作',chip:'sky'},learning:{label:'学习',chip:'emerald'},items:{label:'物品',chip:'amber'},network:{label:'社交',chip:'violet'},life:{label:'生活',chip:'amber'}};
+const isoDate=date=>date.toLocaleDateString('sv-SE');
+function seedScheduledTasks(){
+  if(scheduledTasks.length) return;
+  const today=isoDate(new Date());
+  scheduledTasks=[
+    {id:'seed-1',title:'日程排期引擎数据结构',module:'work',quadrant:'Q1',date:today,time:'09:30'},
+    {id:'seed-3',title:'采购猫粮',module:'items',date:today,time:'16:30'}
+  ];
+}
+function scheduledTaskHTML(task,minuteEditable=false){
+  const meta=scheduleModuleMeta[task.module]||scheduleModuleMeta.life;
+  const timeInput=minuteEditable&&!task.immutable?`<input class="task-time-input" type="time" value="${escapeHTML(task.time)}" data-time-task-id="${escapeHTML(task.id)}" aria-label="精确调整时间" draggable="false">`:'';
+  return `<div class="scheduled-task" ${task.immutable?'':'draggable="true"'} data-scheduled-id="${escapeHTML(task.id)}">${timeInput}<span>${escapeHTML(task.title)}</span> <span class="chip ${meta.chip}">${meta.label}</span>${task.module==='work'&&task.quadrant?` <span class="quadrant-badge">${escapeHTML(task.quadrant)}</span>`:''}</div>`;
+}
+const CALENDAR_START_HOUR=7, CALENDAR_END_HOUR=23, PIXELS_PER_HOUR=60;
+const minutesFromTime=time=>{const [h,m]=time.split(':').map(Number);return h*60+m;};
+const timeFromMinutes=minutes=>`${String(Math.floor(minutes/60)).padStart(2,'0')}:${String(minutes%60).padStart(2,'0')}`;
+function calendarEventHTML(task){
+  const start=minutesFromTime(task.time), duration=Number(task.duration)||60, top=(start-CALENDAR_START_HOUR*60)/60*PIXELS_PER_HOUR, height=Math.max(22,duration/60*PIXELS_PER_HOUR);
+  const meta=scheduleModuleMeta[task.module]||scheduleModuleMeta.life;
+  const controls=task.immutable?'':`<input class="task-time-input" type="time" value="${escapeHTML(task.time)}" data-time-task-id="${escapeHTML(task.id)}" draggable="false">`;
+  const resize=task.immutable?'':`<span class="event-resize" data-resize-id="${escapeHTML(task.id)}"></span>`;
+  return `<div class="calendar-event module-${escapeHTML(task.module)} ${task.immutable?'life-template':''}" ${task.immutable?'':'draggable="true"'} data-scheduled-id="${escapeHTML(task.id)}" style="top:${top}px;height:${height}px"><div>${controls}<strong>${escapeHTML(task.title)}</strong></div><div style="margin-top:3px"><span class="chip ${meta.chip}">${meta.label}</span>${task.module==='work'&&task.quadrant?` <span class="quadrant-badge">${escapeHTML(task.quadrant)}</span>`:''}</div>${resize}</div>`;
+}
+function tasksForDate(dateKey){
+  const date=new Date(`${dateKey}T12:00:00`), regular=scheduledTasks.filter(x=>x.date===dateKey);
+  const recurring=lifeSchedules.filter(x=>lifeScheduleOccursOn(x,date)).map(x=>({id:`life-${x.id}-${dateKey}`,templateId:x.id,title:x.title,module:'life',date:dateKey,time:x.time,duration:60,immutable:true}));
+  return regular.concat(recurring);
+}
+function timeLabelsHTML(){return Array.from({length:CALENDAR_END_HOUR-CALENDAR_START_HOUR+1},(_,i)=>`<span class="time-label" style="top:${i*PIXELS_PER_HOUR}px">${String(CALENDAR_START_HOUR+i).padStart(2,'0')}:00</span>`).join('');}
+function bindTimeCanvas(canvas){
+  canvas.ondragover=e=>{e.preventDefault();canvas.classList.add('drag-over');}; canvas.ondragleave=()=>canvas.classList.remove('drag-over');
+  canvas.ondrop=e=>{e.preventDefault();canvas.classList.remove('drag-over');const rect=canvas.getBoundingClientRect(),raw=(e.clientY-rect.top)/PIXELS_PER_HOUR*60+CALENDAR_START_HOUR*60,snapped=Math.max(CALENDAR_START_HOUR*60,Math.min(CALENDAR_END_HOUR*60-15,Math.round(raw/15)*15));dropScheduleTask(e.dataTransfer.getData('text/plain'),canvas.dataset.date,timeFromMinutes(snapped));};
+}
+function renderDaySchedule(){
+  const root=document.getElementById('scheduleTimeline'); if(!root) return;
+  const today=isoDate(new Date()), tasks=tasksForDate(today);
+  const now=new Date(), nowTop=((now.getHours()*60+now.getMinutes())-CALENDAR_START_HOUR*60)/60*PIXELS_PER_HOUR;
+  root.innerHTML=`<div class="calendar-scroll"><div class="time-board"><div class="time-gutter">${timeLabelsHTML()}</div><div class="calendar-time-canvas" data-date="${today}">${tasks.map(calendarEventHTML).join('')}${nowTop>=0&&nowTop<=960?`<div class="now-line" style="top:${nowTop}px"></div>`:''}</div></div></div>`;
+  bindTimeCanvas(root.querySelector('.calendar-time-canvas'));
+  requestAnimationFrame(()=>{const scroller=root.querySelector('.calendar-scroll');scroller.scrollTop=Math.max(0,(now.getHours()-CALENDAR_START_HOUR-1)*PIXELS_PER_HOUR);});
+}
+function updateScheduledTaskTime(id,time){
+  if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)){notify('请输入有效时间','error');return;}
+  const task=scheduledTasks.find(x=>x.id===id); if(!task)return; task.time=time; persistApp(); renderAllScheduleViews(); notify(`时间已调整为 ${time}`);
+}
+document.addEventListener('change',e=>{if(e.target.matches('.task-time-input'))updateScheduledTaskTime(e.target.dataset.timeTaskId,e.target.value);});
+document.addEventListener('pointerdown',e=>{if(e.target.matches('.task-time-input'))e.stopPropagation();});
+document.addEventListener('pointerdown',e=>{
+  const handle=e.target.closest('.event-resize'); if(!handle)return; e.preventDefault(); e.stopPropagation();
+  const task=scheduledTasks.find(x=>x.id===handle.dataset.resizeId); if(!task)return;
+  const eventCard=handle.closest('.calendar-event'), startY=e.clientY, startDuration=Number(task.duration)||60; eventCard.draggable=false;
+  const move=moveEvent=>{const delta=(moveEvent.clientY-startY)/PIXELS_PER_HOUR*60,next=Math.max(15,Math.round((startDuration+delta)/15)*15);eventCard.style.height=`${Math.max(22,next/60*PIXELS_PER_HOUR)}px`;};
+  const up=upEvent=>{const delta=(upEvent.clientY-startY)/PIXELS_PER_HOUR*60;task.duration=Math.max(15,Math.round((startDuration+delta)/15)*15);document.removeEventListener('pointermove',move);document.removeEventListener('pointerup',up);persistApp();renderAllScheduleViews();notify(`时长已调整为 ${task.duration} 分钟`);};
+  document.addEventListener('pointermove',move);document.addEventListener('pointerup',up,{once:true});
+});
+function startOfWeek(date=new Date()){
+  const result=new Date(date.getFullYear(),date.getMonth(),date.getDate()), offset=(result.getDay()+6)%7; result.setDate(result.getDate()-offset); return result;
+}
+function renderWeekSchedule(){
+  const root=document.getElementById('scheduleWeekGrid'); if(!root) return;
+  const start=startOfWeek(), today=isoDate(new Date()), names=['周一','周二','周三','周四','周五','周六','周日'];
+  const headers=names.map((name,i)=>{const d=new Date(start);d.setDate(start.getDate()+i);return `<div class="week-col-head">${name} · ${d.getMonth()+1}/${d.getDate()}</div>`;}).join('');
+  const columns=names.map((_,i)=>{const date=new Date(start);date.setDate(start.getDate()+i);const key=isoDate(date),tasks=tasksForDate(key);return `<div class="week-time-col calendar-time-canvas" data-date="${key}">${tasks.map(calendarEventHTML).join('')}</div>`;}).join('');
+  root.className='calendar-scroll'; root.innerHTML=`<div class="week-time-board"><div></div>${headers}<div class="time-gutter">${timeLabelsHTML()}</div>${columns}</div>`;
+  root.querySelectorAll('.calendar-time-canvas').forEach(bindTimeCanvas);
+}
+function renderMonthSchedule(){
+  const root=document.getElementById('scheduleMonthGrid'); if(!root) return;
+  const now=new Date(), first=new Date(now.getFullYear(),now.getMonth(),1), start=new Date(first); start.setDate(1-((first.getDay()+6)%7));
+  const heads=['一','二','三','四','五','六','日'].map(x=>`<div class="calendar-head">${x}</div>`).join('');
+  const days=Array.from({length:42},(_,i)=>{ const date=new Date(start); date.setDate(start.getDate()+i); const key=isoDate(date), tasks=tasksForDate(key).sort((a,b)=>a.time.localeCompare(b.time)); return `<div class="calendar-day drop-zone ${date.getMonth()!==now.getMonth()?'muted':''} ${key===isoDate(now)?'today':''}" data-date="${key}" data-time="09:00"><div class="calendar-date">${date.getDate()}</div>${tasks.slice(0,3).map(x=>`<div class="small mono">${escapeHTML(x.time)}</div>${scheduledTaskHTML(x)}`).join('')}${tasks.length>3?`<div class="small">+${tasks.length-3} 项</div>`:''}</div>`; }).join('');
+  root.innerHTML=heads+days; bindScheduleDropZones();
+}
+function renderAllScheduleViews(){ renderDaySchedule(); renderWeekSchedule(); renderMonthSchedule(); updatePoolCounts(); bindPoolReturnZone(); }
+function switchScheduleView(view){
+  document.querySelectorAll('.schedule-tab').forEach(x=>x.classList.toggle('active',x.dataset.scheduleView===view));
+  document.querySelectorAll('.schedule-panel').forEach(x=>x.classList.toggle('active',x.id===`schedule-${view}`));
+}
+function bindScheduleDropZones(){
+  document.querySelectorAll('.drop-zone').forEach(zone=>{
+    zone.ondragover=e=>{e.preventDefault();zone.classList.add('drag-over');};
+    zone.ondragleave=()=>zone.classList.remove('drag-over');
+    zone.ondrop=e=>{e.preventDefault();zone.classList.remove('drag-over');dropScheduleTask(e.dataTransfer.getData('text/plain'),zone.dataset.date,zone.dataset.time);};
+  });
+}
+function dropScheduleTask(taskId,date,time){
+  if(taskId.startsWith('scheduled:')){
+    const id=taskId.slice(10), task=scheduledTasks.find(x=>x.id===id); if(!task) return;
+    task.date=date; task.time=time; persistApp(); renderAllScheduleViews(); notify(`已调整到 ${date} ${time}`); return;
+  }
+  const rawId=taskId.replace(/^pool:/,''), item=document.querySelector(`.pool-item[data-task-id="${CSS.escape(rawId)}"]`); if(!item) return;
+  scheduledTasks.push({id:rawId,title:item.querySelector(':scope > span').textContent,module:item.dataset.module,quadrant:item.dataset.quadrant||'',date,time});
+  item.remove(); persistApp(); renderAllScheduleViews(); notify(`已排期到 ${date} ${time}`);
+}
+function updatePoolCounts(){
+  document.querySelectorAll('.pool-module').forEach(group=>{ const count=group.querySelectorAll('.pool-item').length; const badge=group.querySelector('.pool-count'); if(badge) badge.textContent=count; group.style.display=count?'block':'none'; });
+}
+document.addEventListener('dragstart',e=>{
+  const poolItem=e.target.closest('.pool-item[draggable="true"]'), scheduled=e.target.closest('.scheduled-task[draggable="true"],.calendar-event[draggable="true"]');
+  const item=poolItem||scheduled; if(!item)return; item.classList.add('dragging');
+  e.dataTransfer.setData('text/plain',poolItem?`pool:${poolItem.dataset.taskId}`:`scheduled:${scheduled.dataset.scheduledId}`); e.dataTransfer.effectAllowed='move';
+});
+document.addEventListener('dragend',e=>e.target.closest('.pool-item,.scheduled-task,.calendar-event')?.classList.remove('dragging'));
+document.addEventListener('click',e=>{ const head=e.target.closest('.pool-module-head'); if(head) head.closest('.pool-module').classList.toggle('collapsed'); });
+function bindPoolReturnZone(){
+  const pool=document.getElementById('schedulePool'); if(!pool)return;
+  pool.ondragover=e=>{ if(e.dataTransfer.types.includes('text/plain')){e.preventDefault();pool.classList.add('drag-over');} };
+  pool.ondragleave=e=>{if(!pool.contains(e.relatedTarget))pool.classList.remove('drag-over');};
+  pool.ondrop=e=>{e.preventDefault();pool.classList.remove('drag-over');const payload=e.dataTransfer.getData('text/plain');if(payload.startsWith('scheduled:')) returnScheduledTaskToPool(payload.slice(10));};
+}
+function returnScheduledTaskToPool(id){
+  const index=scheduledTasks.findIndex(x=>x.id===id); if(index<0)return;
+  const task=scheduledTasks[index], group=document.querySelector(`.pool-module[data-module="${CSS.escape(task.module)}"]`); if(!group){notify('该来源模块不存在，无法撤销排期','error');return;}
+  const item=document.createElement('div'); item.className='pool-item'; item.draggable=true; item.dataset.taskId=task.id; item.dataset.module=task.module; if(task.quadrant)item.dataset.quadrant=task.quadrant;
+  const title=document.createElement('span'); title.textContent=task.title; const meta=document.createElement('span');
+  meta.innerHTML=`${task.module==='work'&&task.quadrant?`<span class="quadrant-badge">${escapeHTML(task.quadrant)}</span> `:''}<span class="drag-hint">拖动</span>`;
+  item.append(title,meta); group.appendChild(item); group.style.display='block'; group.classList.remove('collapsed'); scheduledTasks.splice(index,1);
+  persistApp(); renderAllScheduleViews(); notify('已撤销排期并还原到任务池');
+}
+function updateScheduleFrequencyFields(){
+  const frequency=document.getElementById('scheduleFrequency').value;
+  document.getElementById('scheduleWeekday').style.display=['weekly','biweekly'].includes(frequency)?'block':'none';
+  document.getElementById('scheduleMonthDay').style.display=frequency==='monthly'?'block':'none';
+}
+function getLifeScheduleDraft(){
+  const frequency=document.getElementById('scheduleFrequency').value;
+  const time=document.getElementById('scheduleStart').value;
+  const weekday=Number(document.getElementById('scheduleWeekday').value);
+  const monthDay=Number(document.getElementById('scheduleMonthDay').value);
+  if(!time || (frequency==='monthly' && (!Number.isInteger(monthDay)||monthDay<1||monthDay>31))) return null;
+  return {frequency,time,weekday,monthDay};
+}
+function lifeScheduleOccursOn(schedule,date){
+  if(schedule.frequency==='daily') return true;
+  if(schedule.frequency==='weekly') return date.getDay()===schedule.weekday;
+  if(schedule.frequency==='monthly') return date.getDate()===schedule.monthDay;
+  if(schedule.frequency==='biweekly'){
+    if(date.getDay()!==schedule.weekday) return false;
+    const anchor=new Date(`${schedule.anchorDate}T00:00:00`), target=new Date(date.getFullYear(),date.getMonth(),date.getDate());
+    return Math.round((target-anchor)/86400000)%14===0;
+  }
+  return false;
+}
+function renderLifeSchedulePreview(){
+  const preview=document.getElementById('lifeSchedulePreview'); if(!preview) return;
+  const dateInput=document.getElementById('lifePreviewDate');
+  if(!dateInput.value) dateInput.value=new Date().toLocaleDateString('sv-SE');
+  const date=new Date(`${dateInput.value}T12:00:00`);
+  const items=lifeSchedules.filter(item=>lifeScheduleOccursOn(item,date)).sort((a,b)=>a.time.localeCompare(b.time));
+  preview.innerHTML=items.length?items.map(item=>`<div class="tl-slot"><div class="tl-time">${escapeHTML(item.time)}</div><div class="tl-title"><span class="editable">${escapeHTML(item.title)}</span> <span class="chip amber">${escapeHTML(item.label)}</span></div></div>`).join(''):'<div class="small">这一天还没有生活日程</div>';
+}
+function renderLifeScheduleTemplates(){
+  const root=document.getElementById('lifeScheduleTemplates'); if(!root)return;
+  root.innerHTML=lifeSchedules.length?lifeSchedules.map(item=>`<div class="life-template-row"><span class="mono">${escapeHTML(item.time)}</span><span class="life-title">${escapeHTML(item.title)}</span><span class="chip amber">${escapeHTML(item.label)}</span><button class="text-action" onclick="editLifeSchedule('${escapeHTML(item.id)}')">修改</button><button class="text-action danger" onclick="deleteLifeSchedule('${escapeHTML(item.id)}')">删除</button></div>`).join(''):'<div class="small">尚未创建生活日程模板</div>';
+}
+function editLifeSchedule(id){
+  const item=lifeSchedules.find(x=>x.id===id); if(!item)return; editingLifeScheduleId=id;
+  document.getElementById('scheduleTitle').value=item.title; document.getElementById('scheduleFrequency').value=item.frequency; document.getElementById('scheduleStart').value=item.time;
+  document.getElementById('scheduleWeekday').value=String(item.weekday); document.getElementById('scheduleMonthDay').value=String(item.monthDay||1);
+  updateScheduleFrequencyFields(); document.getElementById('lifeScheduleSubmit').textContent='保存修改'; document.getElementById('scheduleTitle').focus();
+}
+function deleteLifeSchedule(id){
+  lifeSchedules=lifeSchedules.filter(x=>x.id!==id); if(editingLifeScheduleId===id) resetLifeScheduleForm(); persistApp(); renderLifeScheduleTemplates(); renderLifeSchedulePreview(); renderAllScheduleViews(); notify('生活日程模板已删除');
+}
+function resetLifeScheduleForm(){ editingLifeScheduleId=''; document.getElementById('scheduleTitle').value=''; document.getElementById('lifeScheduleSubmit').textContent='添加生活日程'; }
+function submitScheduleEvent(){
+  const title=document.getElementById('scheduleTitle').value.trim();
+  const draft=getLifeScheduleDraft();
+  if(!title || !draft){ notify('请填写名称、有效频率和开始时间','error'); return; }
+  const frequency=draft.frequency;
+  const labels={daily:'每天',weekly:'每周',monthly:'每月',biweekly:'每两周'};
+  const detail=frequency==='monthly'?`${labels[frequency]} ${document.getElementById('scheduleMonthDay').value} 日`:['weekly','biweekly'].includes(frequency)?`${labels[frequency]}${document.getElementById('scheduleWeekday').selectedOptions[0].textContent}`:labels[frequency];
+  const anchor=new Date();
+  if(frequency==='biweekly') anchor.setDate(anchor.getDate()+((draft.weekday-anchor.getDay()+7)%7));
+  const anchorDate=anchor.toLocaleDateString('sv-SE');
+  const record={id:editingLifeScheduleId||(crypto.randomUUID?.()||String(Date.now())),title,time:draft.time,frequency,weekday:draft.weekday,monthDay:draft.monthDay,anchorDate,label:detail};
+  if(editingLifeScheduleId){ const index=lifeSchedules.findIndex(x=>x.id===editingLifeScheduleId); if(index>=0)lifeSchedules[index]=record; }
+  else lifeSchedules.push(record);
+  const wasEditing=Boolean(editingLifeScheduleId); resetLifeScheduleForm(); persistApp(); renderLifeScheduleTemplates(); renderLifeSchedulePreview(); renderAllScheduleViews(); notify(wasEditing?'生活日程模板已修改':'生活日程模板已添加');
+}
+
+function toggleChangelogForm(){
+  document.getElementById('changelogForm').classList.toggle('show');
+}
+document.getElementById('changelogTypes').addEventListener('click',(e)=>{
+  if(e.target.classList.contains('type-pill')){
+    document.querySelectorAll('#changelogTypes .type-pill').forEach(p=>p.classList.remove('selected'));
+    e.target.classList.add('selected');
+  }
+});
+function submitChangelog(){
+  const type = document.querySelector('#changelogTypes .type-pill.selected').dataset.type;
+  const domain = document.getElementById('changelogDomain').value.trim() || '#未分类';
+  const content = document.getElementById('changelogContent').value.trim();
+  if(!content) return;
+  const today = new Date();
+  const v = 'v'+today.getFullYear()+'.'+String(today.getMonth()+1).padStart(2,'0');
+  const slot = document.createElement('div');
+  slot.className = 'tl-slot';
+  slot.innerHTML = `<div class="tl-time">${v} · ${escapeHTML(type)} · ${escapeHTML(domain)}</div><div class="tl-title">${escapeHTML(content)}</div>`;
+  const tl = document.getElementById('changelogTimeline');
+  tl.insertBefore(slot, tl.firstChild);
+  document.getElementById('changelogDomain').value='';
+  document.getElementById('changelogContent').value='';
+  document.getElementById('changelogForm').classList.remove('show');
+  persistApp();
+}
+function togglePrincipleForm(col){
+  document.getElementById('principleForm-'+col).classList.toggle('show');
+}
+function submitPrinciple(col){
+  const domain = document.getElementById('principleDomain-'+col).value.trim();
+  const text = document.getElementById('principleText-'+col).value.trim();
+  if(!text) return;
+  const chip = document.createElement('div');
+  chip.className = 'principle-chip editable';
+  chip.onclick = function(){ makeEditable(this); };
+  chip.textContent = (domain? domain+'：' : '') + text;
+  document.getElementById('principleList-'+col).appendChild(chip);
+  document.getElementById('principleDomain-'+col).value='';
+  document.getElementById('principleText-'+col).value='';
+  document.getElementById('principleForm-'+col).classList.remove('show');
+  persistApp();
+}
+
+/* ---------- 通用原地编辑 ---------- */
+function makeEditable(el){
+  if(el.querySelector('input')) return;
+  const original = el.textContent;
+  const input = document.createElement('input');
+  input.className = 'edit-input';
+  input.value = original;
+  el.textContent = '';
+  el.appendChild(input);
+  input.focus();
+  input.select();
+  function finish(){
+    el.textContent = input.value.trim() || original;
+    if(el.closest('#domainGrid')) refreshLearningDomainOptions();
+    persistApp();
+  }
+  input.addEventListener('blur', finish);
+  input.addEventListener('keydown', e=>{
+    if(e.key==='Enter'){ e.preventDefault(); input.blur(); }
+    if(e.key==='Escape'){ el.textContent = original; }
+  });
+  input.addEventListener('click', e=>e.stopPropagation());
+}
+
+/* ---------- Finance ---------- */
+let budgetLimit = 3000;
+let spentTotal = 2460;
+let pendingItems = [{note:'蓝牙耳机（想换新的，非必需）', amount:128}];
+
+function renderBudget(){
+  const actualPct = spentTotal/budgetLimit*100;
+  const pct = Math.min(100, Math.round(actualPct));
+  const now=new Date(), daysInMonth=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
+  const dayFraction=(now.getHours()*60+now.getMinutes())/1440;
+  const timePct=Math.min(100,((now.getDate()-1+dayFraction)/daysInMonth)*100);
+  const paceLead=Math.round(actualPct-timePct);
+  document.getElementById('spentAmount').textContent = '$'+spentTotal.toLocaleString();
+  document.getElementById('budgetAmount').textContent = '$'+budgetLimit.toLocaleString();
+  const bar = document.getElementById('budgetBar');
+  const chip = document.getElementById('budgetChip');
+  bar.style.width = pct+'%';
+  bar.className = 'progress-fill' + (pct>=100?' crimson':pct>=85?' amber':'');
+  chip.className = 'chip' + (pct>=100?' crimson':pct>=85?' amber':' emerald');
+  chip.textContent = '已用 '+pct+'%';
+  const card=document.getElementById('budgetCard'), pace=document.getElementById('budgetPace');
+  card.className='card'+(actualPct>=100?' alert-crimson pulse-crimson':actualPct>timePct?' alert-amber pulse-amber':'');
+  if(actualPct>=100){ pace.textContent=`预算已用尽 · 本月时间进度 ${Math.round(timePct)}%`; pace.style.color='var(--crimson)'; }
+  else if(actualPct>timePct){ pace.textContent=`消费进度领先时间进度 ${paceLead}% · 当前时间进度 ${Math.round(timePct)}%`; pace.style.color='#B45309'; }
+  else { pace.textContent=`消费进度与时间进度正常 · 当前时间进度 ${Math.round(timePct)}%`; pace.style.color='var(--text-dim)'; }
+}
+function editBudget(el){
+  if(el.querySelector('input')) return;
+  const input = document.createElement('input');
+  input.className = 'edit-input';
+  input.style.width = '90px';
+  input.value = budgetLimit;
+  el.textContent = '';
+  el.appendChild(input);
+  input.focus();
+  input.select();
+  function finish(){
+    const num = parseFloat(input.value);
+    if(!isNaN(num) && num>0){ budgetLimit = num; }
+    renderBudget(); persistApp();
+  }
+  input.addEventListener('blur', finish);
+  input.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); input.blur(); } });
+  input.addEventListener('click', e=>e.stopPropagation());
+}
+document.getElementById('finNecessity') && document.getElementById('finNecessity').addEventListener('click',(e)=>{
+  if(e.target.classList.contains('type-pill')){
+    document.querySelectorAll('#finNecessity .type-pill').forEach(p=>p.classList.remove('selected'));
+    e.target.classList.add('selected');
+  }
+});
+function submitFinance(){
+  const amountStr = document.getElementById('finAmount').value.trim();
+  const note = document.getElementById('finNote').value.trim();
+  const necessity = document.querySelector('#finNecessity .type-pill.selected').dataset.necessity;
+  if(!amountStr || !note) return;
+  const amount = parseFloat(amountStr);
+  if(!Number.isFinite(amount) || amount===0){ notify('请输入有效且非零的金额','error'); return; }
+
+  if(necessity === '必要' || amount > 0){
+    spentTotal += (amount<0? -amount : 0);
+    renderBudget();
+    document.getElementById('todaySpent').textContent = (amount<0?'-':'+')+'$'+Math.abs(amount).toFixed(2);
+    document.getElementById('todaySpentNote').textContent = note + ' · 自动归类';
+  } else {
+    pendingItems.push({note, amount:Math.abs(amount)});
+    renderPending();
+  }
+  document.getElementById('finAmount').value='';
+  document.getElementById('finNote').value='';
+  persistApp(); notify(necessity==='非必要' && amount<0 ? '已进入月末评估队列' : '账目已记录');
+}
+function renderPending(){
+  const list = document.getElementById('pendingList');
+  if(pendingItems.length===0){
+    list.innerHTML = '<div class="small">暂无待评估的非必要支出</div>';
+    return;
+  }
+  list.innerHTML = pendingItems.map(it=>`<div class="row"><span>-$${it.amount}　${escapeHTML(it.note)}</span><span class="chip sky">待月底评估</span></div>`).join('');
+}
+function settleMonthEnd(){
+  const surplus = budgetLimit - spentTotal;
+  const pendingTotal = pendingItems.reduce((s,it)=>s+it.amount,0);
+  const result = document.getElementById('settleResult');
+  if(pendingItems.length===0){
+    result.textContent = '本月没有待评估的非必要支出。';
+    return;
+  }
+  if(surplus >= pendingTotal){
+    spentTotal += pendingTotal;
+    pendingItems = [];
+    renderBudget(); renderPending();
+    result.textContent = `预算有盈余（结余 $${surplus}），非必要支出已全部放行并计入本月消费。`; persistApp();
+  } else {
+    result.textContent = `预算结余仅 $${surplus}，不足以覆盖待评估支出（共 $${pendingTotal}），本次不放行，建议顺延至下月重新评估。`;
+  }
+}
+renderPending();
+
+/* ---------- Items ---------- */
+document.getElementById('itemTypes').addEventListener('click',(e)=>{
+  if(e.target.classList.contains('type-pill')){
+    document.querySelectorAll('#itemTypes .type-pill').forEach(p=>p.classList.remove('selected'));
+    e.target.classList.add('selected');
+    document.getElementById('foodExpiry').style.display=e.target.dataset.type==='食物'?'block':'none';
+  }
+});
+function refreshFoodExpiry(){
+  const today=new Date(); today.setHours(0,0,0,0);
+  document.querySelectorAll('#foodList .food-row').forEach(row=>{
+    const expiry=row.querySelector('.food-expiry')?.value||row.dataset.expiry; if(!expiry)return;
+    row.dataset.expiry=expiry; const days=Math.ceil((new Date(`${expiry}T00:00:00`)-today)/86400000), status=row.querySelector('.food-status');
+    row.className='food-row'+(days<=3?' alert-crimson pulse-crimson':days<=7?' alert-amber pulse-amber':'');
+    status.className='food-status chip '+(days<=3?'crimson':days<=7?'amber':'emerald');
+    status.textContent=days<0?`已过期 ${Math.abs(days)} 天`:days===0?'今天到期':`${days} 天后到期`;
+  });
+}
+document.addEventListener('change',e=>{if(e.target.matches('#foodList .food-expiry')){refreshFoodExpiry();persistApp();}});
+function submitItem(){
+  const type = document.querySelector('#itemTypes .type-pill.selected').dataset.type;
+  const name = document.getElementById('itemName').value.trim();
+  const detail = document.getElementById('itemDetail').value.trim();
+  const location=document.getElementById('itemLocation').value.trim(), expiry=document.getElementById('foodExpiry').value;
+  if(!name || !location){ notify('请填写物品名称和存放位置','error'); return; }
+  if(type==='食物'){
+    if(!expiry){notify('食物必须填写到期日','error');return;}
+    const row=document.createElement('div'); row.className='food-row'; row.dataset.expiry=expiry;
+    row.innerHTML=`<span class="editable">${escapeHTML(name)}</span><span class="editable">${escapeHTML(location)}</span><input class="food-expiry" type="date" value="${escapeHTML(expiry)}" aria-label="${escapeHTML(name)}到期日"><span class="food-status"></span>`;
+    document.getElementById('foodList').appendChild(row); refreshFoodExpiry();
+  } else {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `<h3><span class="editable">${escapeHTML(name)}</span> <span class="tag">${escapeHTML(type)}</span></h3><div class="small item-detail editable">${escapeHTML(detail || '暂无详情')} · 位置：${escapeHTML(location)}</div>`;
+  document.getElementById('itemsGrid').appendChild(card);
+  }
+  document.getElementById('itemName').value='';
+  document.getElementById('itemDetail').value='';
+  document.getElementById('itemLocation').value=''; document.getElementById('foodExpiry').value='';
+  persistApp(); notify(type==='食物'?'食物已加入完整清单':'物品已保存');
+}
+
+/* ---------- Network ---------- */
+function submitPerson(){
+  const name = document.getElementById('netName').value.trim();
+  const relation = document.getElementById('netRelation').value.trim();
+  const note = document.getElementById('netNote').value.trim();
+  const date = document.getElementById('netDate').value.trim();
+  if(!name) return;
+  const card = document.createElement('div');
+  card.className = 'person-card';
+  card.innerHTML = `
+    <div style="display:flex; gap:10px; align-items:center;">
+      <div class="person-avatar">${escapeHTML(name.charAt(0))}</div>
+      <div>
+        <div style="font-weight:700; font-size:13.5px;" class="person-name editable">${escapeHTML(name)}</div>
+        <div class="small person-relation editable">${escapeHTML(relation || '联系人')} · 刚刚添加</div>
+      </div>
+      ${date ? `<span class="chip amber" style="margin-left:auto;">${escapeHTML(date)}</span>` : ''}
+    </div>
+    <div style="margin-top:10px; font-size:12px; color:var(--text);" class="person-note editable">${escapeHTML(note || '暂无记录')}</div>
+  `;
+  document.getElementById('networkGrid').appendChild(card);
+  document.getElementById('netName').value='';
+  document.getElementById('netRelation').value='';
+  document.getElementById('netNote').value='';
+  document.getElementById('netDate').value='';
+  persistApp(); notify('联系人已保存');
+}
+
+/* ---------- Trade ---------- */
+let watchlist = [
+  {code:'600519', name:'贵州茅台', target:1680, safety:1450, current:1442},
+  {code:'002230', name:'科大讯飞', target:40, safety:34, current:41.2}
+];
+function toggleWatchForm(){ document.getElementById('watchForm').classList.toggle('show'); }
+function renderWatchlist(){
+  const list = document.getElementById('watchList');
+  list.innerHTML = watchlist.map((w,idx)=>{
+    let rowClass='', chip='';
+    if(w.current >= w.target){
+      rowClass='hit-target'; chip='<span class="chip crimson">已达目标价</span>';
+    } else if(w.current <= w.safety){
+      rowClass='hit-safety'; chip='<span class="chip sky">已跌破安全价</span>';
+    } else {
+      chip='<span class="small">观察中</span>';
+    }
+    return `<div class="watch-row ${rowClass}">
+      <span class="wcode editable" onclick="editWatchField(this,${idx},'codeName')">${escapeHTML(w.code)} ${escapeHTML(w.name)}</span>
+      <span class="wprice editable" onclick="editWatchField(this,${idx},'target')">¥${w.target}</span>
+      <span class="wprice editable" onclick="editWatchField(this,${idx},'safety')">¥${w.safety}</span>
+      <span class="wprice editable" onclick="editWatchField(this,${idx},'current')">¥${w.current}</span>
+      <span class="wstatus">${chip}</span>
+    </div>`;
+  }).join('');
+  renderPositionCodeOptions();
+}
+function editWatchField(el, idx, field){
+  if(el.querySelector('input')) return;
+  const original = el.textContent;
+  const input = document.createElement('input');
+  input.className = 'edit-input';
+  input.value = field==='codeName' ? original : original.replace('¥','');
+  el.textContent = '';
+  el.appendChild(input);
+  input.focus();
+  input.select();
+  function finish(){
+    if(field==='codeName'){
+      const parts = input.value.trim().split(/\s+/);
+      watchlist[idx].code = parts[0] || watchlist[idx].code;
+      watchlist[idx].name = parts.slice(1).join(' ') || watchlist[idx].name;
+    } else {
+      const val = parseFloat(input.value);
+      if(!isNaN(val)) watchlist[idx][field] = val;
+    }
+    renderWatchlist();
+    persistApp();
+  }
+  input.addEventListener('blur', finish);
+  input.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); input.blur(); } });
+  input.addEventListener('click', e=>e.stopPropagation());
+}
+function submitWatch(){
+  const code = document.getElementById('wCode').value.trim();
+  const name = document.getElementById('wName').value.trim();
+  const target = parseFloat(document.getElementById('wTarget').value);
+  const safety = parseFloat(document.getElementById('wSafety').value);
+  const current = parseFloat(document.getElementById('wCurrent').value);
+  if(!/^[A-Za-z0-9._-]{1,16}$/.test(code) || ![target,safety,current].every(Number.isFinite)){ notify('请填写有效代码和价格','error'); return; }
+  if(safety>=target){ notify('安全价必须低于目标价','error'); return; }
+  watchlist.push({code, name: name||'未命名', target, safety, current});
+  renderWatchlist();
+  ['wCode','wName','wTarget','wSafety','wCurrent'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('watchForm').classList.remove('show');
+  persistApp(); notify('已加入观察列表');
+}
+renderWatchlist();
+
+function togglePosForm(){ document.getElementById('posForm').classList.toggle('show'); }
+function renderPositionCodeOptions(){
+  const sel = document.getElementById('posCode');
+  if(!sel) return;
+  sel.innerHTML = watchlist.map(w=>`<option value="${escapeHTML(w.code)}">${escapeHTML(w.code)} ${escapeHTML(w.name)}</option>`).join('');
+}
+function submitPosition(){
+  const code = document.getElementById('posCode').value;
+  const price = document.getElementById('posPrice').value.trim();
+  const stop = document.getElementById('posStop').value.trim();
+  const priceNum=Number(price), stopNum=Number(stop);
+  if(!code || !Number.isFinite(priceNum) || priceNum<=0 || (stop && (!Number.isFinite(stopNum) || stopNum<=0))){ notify('请输入有效建仓价和止损价','error'); return; }
+  const w = watchlist.find(x=>x.code===code);
+  const row = document.createElement('div');
+  row.style.marginTop = '10px';
+  row.innerHTML = `<div class="row"><span class="mono">${escapeHTML(code)} ${escapeHTML(w?w.name:'')}</span><span class="chip sky">建仓 ¥${priceNum}</span></div><div class="small">止损 ¥${escapeHTML(stop||'未设置')}</div>`;
+  document.getElementById('posList').appendChild(row);
+  document.getElementById('posPrice').value=''; document.getElementById('posStop').value='';
+  document.getElementById('posForm').classList.remove('show');
+  persistApp(); notify('持仓已记录');
+}
+function submitTradeReview(content){
+  const input=document.getElementById('tradeReviewInput');
+  const review=typeof content==='string'?content.trim():input.value.trim();
+  if(!review){notify('请输入今日复盘内容','error');return false;}
+  const date=new Date().toLocaleDateString('sv-SE'), timeline=document.getElementById('tradeReviewTimeline');
+  let slot=timeline.querySelector(`[data-review-date="${date}"]`);
+  if(!slot){slot=document.createElement('div');slot.className='tl-slot';slot.dataset.reviewDate=date;slot.innerHTML='<div class="tl-time"></div><div class="tl-title editable"></div>';timeline.insertBefore(slot,timeline.firstChild);}
+  slot.querySelector('.tl-time').textContent=date;slot.querySelector('.tl-title').textContent=review;
+  input.value='';persistApp();notify('今日投资复盘已保存');return true;
+}
+
+/* ---------- Learning ---------- */
+document.getElementById('learnTypes').addEventListener('click',(e)=>{
+  if(e.target.classList.contains('type-pill')){
+    document.querySelectorAll('#learnTypes .type-pill').forEach(p=>p.classList.remove('selected'));
+    e.target.classList.add('selected');
+    document.getElementById('learnSub').disabled=e.target.dataset.type==='领域';
+    renderLearningDomainDropdown();
+  }
+});
+function renderLearningDomainDropdown(){
+  const select=document.getElementById('learnSub'), shell=select?.closest('.select-shell'), trigger=document.getElementById('learnSubTrigger'), menu=document.getElementById('learnSubMenu'); if(!select||!shell||!trigger||!menu)return;
+  shell.classList.toggle('disabled',select.disabled); trigger.textContent=select.selectedOptions[0]?.textContent||'不关联领域'; menu.replaceChildren();
+  [...select.options].forEach(option=>{const item=document.createElement('div');item.className='custom-select-option'+(option.value===select.value?' selected':'');item.textContent=option.textContent;item.role='option';item.setAttribute('aria-selected',String(option.value===select.value));item.onclick=()=>chooseLearningDomain(option.value);menu.appendChild(item);});
+}
+function toggleLearningDomainDropdown(){const shell=document.getElementById('learnSub')?.closest('.select-shell');if(shell&&!shell.classList.contains('disabled'))shell.classList.toggle('open');}
+function chooseLearningDomain(value){const select=document.getElementById('learnSub');select.value=value;select.closest('.select-shell').classList.remove('open');renderLearningDomainDropdown();}
+document.addEventListener('click',e=>{const shell=document.getElementById('learnSub')?.closest('.select-shell');if(shell&&!shell.contains(e.target))shell.classList.remove('open');});
+function refreshLearningDomainOptions(){
+  const select=document.getElementById('learnSub'); if(!select)return;
+  const current=select.value;
+  const domains=[...document.querySelectorAll('#domainGrid > .learning-domain-card .domain-title')].map(el=>el.textContent.trim().replace(/^#/, '')).filter(Boolean);
+  select.replaceChildren(new Option('不关联领域',''),...domains.map(name=>new Option(name,name)));
+  select.value=domains.includes(current)?current:'';
+  renderLearningDomainDropdown();
+}
+function upgradeLearningDomainCards(){
+  document.querySelectorAll('#domainGrid > .card').forEach(card=>{
+    const title=card.querySelector('h3'); if(!title||!title.textContent.trim().startsWith('#'))return;
+    const name=title.textContent.trim().replace(/^#/,''); card.classList.add('learning-domain-card'); card.dataset.domain=name;
+    title.classList.remove('editable'); title.classList.add('domain-title'); title.removeAttribute('onclick');
+  });
+}
+function ensureDomainDetail(name){
+  if(!learningDomainDetails[name]) learningDomainDetails[name]={summary:'',milestones:[],tasks:[]};
+  return learningDomainDetails[name];
+}
+function initializeLearningDomains(){
+  if(!learningDomainDetails['Java/Kafka 深化']) learningDomainDetails['Java/Kafka 深化']={summary:'深化分布式系统与消息中间件的工程实践。',milestones:[{title:'掌握 Kafka 核心架构',done:true},{title:'完成性能调优实践',done:true},{title:'梳理故障恢复机制',done:false},{title:'输出团队分享',done:false}],tasks:[{title:'完成消费者组再平衡实验',done:false},{title:'整理线上案例',done:false}]};
+  if(!learningDomainDetails['A股量化方法论']) learningDomainDetails['A股量化方法论']={summary:'建立可验证、可复盘的投资研究框架。',milestones:[{title:'建立估值框架',done:true},{title:'完成因子回测',done:false},{title:'形成交易检查清单',done:false}],tasks:[{title:'阅读《估值的艺术》第3章',done:false}]};
+  Object.entries(learningDomainDetails).forEach(([name,detail])=>{const done=(detail.milestones||[]).filter(x=>x.done).length,total=(detail.milestones||[]).length;updateDomainCardProgress(name,done,total,total?Math.round(done/total*100):0);});
+}
+function openDomainDetail(name){activeLearningDomain=name;ensureDomainDetail(name);renderDomainDetail();document.getElementById('domainDetailOverlay').classList.add('show');}
+function closeDomainDetail(){document.getElementById('domainDetailOverlay').classList.remove('show');activeLearningDomain='';}
+function renderDomainDetail(){
+  if(!activeLearningDomain)return; const detail=ensureDomainDetail(activeLearningDomain);
+  document.getElementById('domainDetailTitle').textContent=activeLearningDomain;document.getElementById('domainDetailSummary').value=detail.summary||'';
+  const renderList=(id,items,type)=>{const root=document.getElementById(id);root.innerHTML=items.length?items.map((item,index)=>`<div class="domain-detail-item ${item.done?'done':''}"><button class="domain-detail-check" aria-label="切换完成状态" onclick="toggleDomainDetailItem('${type}',${index})"></button><span>${escapeHTML(item.title)}</span></div>`).join(''):'<div class="small">暂无内容</div>';};
+  renderList('domainMilestoneList',detail.milestones,'milestones');renderList('domainStageTaskList',detail.tasks,'tasks');
+  const done=detail.milestones.filter(x=>x.done).length,total=detail.milestones.length,pct=total?Math.round(done/total*100):0;
+  document.getElementById('domainMilestoneProgress').textContent=`${done}/${total}`;updateDomainCardProgress(activeLearningDomain,done,total,pct);
+}
+function addDomainDetailItem(type){
+  const input=document.getElementById(type==='milestones'?'domainMilestoneInput':'domainStageTaskInput'),title=input.value.trim();if(!title)return;
+  ensureDomainDetail(activeLearningDomain)[type].push({title,done:false});input.value='';persistApp();renderDomainDetail();
+}
+function toggleDomainDetailItem(type,index){const items=ensureDomainDetail(activeLearningDomain)[type];if(!items[index])return;items[index].done=!items[index].done;persistApp();renderDomainDetail();}
+function saveDomainSummary(){if(!activeLearningDomain)return;ensureDomainDetail(activeLearningDomain).summary=document.getElementById('domainDetailSummary').value.trim();persistApp();}
+function updateDomainCardProgress(name,done,total,pct){
+  const card=[...document.querySelectorAll('.learning-domain-card')].find(x=>x.dataset.domain===name);if(!card)return;
+  const small=card.querySelector('.small'),fill=card.querySelector('.progress-fill');if(small)small.textContent=`里程碑 ${done}/${total}`;if(fill){fill.style.width=`${pct}%`;fill.classList.toggle('amber',pct>0&&pct<50);}
+}
+document.addEventListener('click',e=>{const card=e.target.closest('.learning-domain-card');if(card&&!e.target.closest('input,button'))openDomainDetail(card.dataset.domain);});
+function submitLearning(typeOverride='领域'){
+  const type = typeOverride;
+  const main = document.getElementById('learnMain').value.trim();
+  const sub = document.getElementById('learnSub').value.trim();
+  if(!main) return;
+  if(type === '领域'){
+    const card = document.createElement('div');
+    card.className = 'card learning-domain-card';card.dataset.domain=main;
+    card.innerHTML = `<h3 class="domain-title">#${escapeHTML(main)}</h3><div class="small">里程碑 0/0</div><div class="progress"><div class="progress-fill" style="width:0%;"></div></div>`;
+    document.getElementById('domainGrid').insertBefore(card, document.getElementById('domainGrid').lastElementChild);
+    ensureDomainDetail(main);
+    refreshLearningDomainOptions();
+  } else if(type === '任务'){
+    const item = document.createElement('div');
+    item.className = 'pool-item';
+    item.innerHTML = `<span>${escapeHTML(main)}${sub? ' #'+escapeHTML(sub) : ''}</span><span class="drag-hint">拖入日程 →</span>`;
+    document.getElementById('learnTaskPool').appendChild(item);
+  } else {
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = `<span class="editable">${escapeHTML(main)}</span><span class="chip violet">来源：闪念</span>`;
+    document.getElementById('readInboxList').appendChild(row);
+  }
+  document.getElementById('learnMain').value='';
+  document.getElementById('learnSub').value='';
+  renderLearningDomainDropdown();
+  persistApp(); notify('学习内容已保存');
+}
+
+function toggleMenubarPopover(){
+  document.getElementById('menubarPopover').classList.toggle('show');
+}
+document.addEventListener('click', (e)=>{
+  const pop = document.getElementById('menubarPopover');
+  if(pop.classList.contains('show') && !pop.contains(e.target) && !e.target.closest('.menubar-widget')){
+    pop.classList.remove('show');
+  }
+});
+function tickClock(){
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2,'0');
+  const m = String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('menubarClock').textContent = h+':'+m;
+}
+tickClock(); setInterval(tickClock, 30000);
+
+const views = document.querySelectorAll('.view');
+const navItems = document.querySelectorAll('.nav-item');
+const titles = {
+  dashboard:['今日总览','每日聚焦，信息过滤'],
+  compass:['人生地图 Compass','战略对齐，做人/做事双核'],
+  work:['工作 Work','高杠杆，防止发散'],
+  schedule:['日程 Schedule','唯一排期权，防冲突'],
+  finance:['财务 Finance','强制替换，防囤货拦截'],
+  items:['物品 Items','一进一出，极简空间'],
+  network:['社交 Network','真诚记录，不做关系量化'],
+  trade:['投资 Trade','纪律执行，防冲动交易'],
+  learning:['学习 Read & Inbox','结构化沉淀，闪念闭环']
+};
+navItems.forEach(item=>{
+  item.addEventListener('click',()=>{
+    navItems.forEach(i=>i.classList.remove('active'));
+    item.classList.add('active');
+    views.forEach(v=>v.classList.remove('active'));
+    const key = item.dataset.view;
+    document.getElementById('view-'+key).classList.add('active');
+    document.getElementById('viewTitle').textContent = titles[key][0];
+    document.getElementById('viewSub').textContent = titles[key][1];
+  });
+});
+
+const subcats = {
+  work: {hint:'选择四象限类型', items:[
+    {label:'Q1 重要且紧急', tpl:'[任务名] @P0 #项目'},
+    {label:'Q2 重要不紧急', tpl:'[任务名] @P1 #项目'},
+    {label:'Q3 紧急不重要', tpl:'[任务名] @P2 #项目'},
+    {label:'Q4 不紧急不重要', tpl:'[任务名] #项目'}
+  ]},
+  'finance-out': {hint:'选择支出类型', items:[
+    {label:'必要支出', tpl:'-[金额] [备注]'},
+    {label:'非必要支出', tpl:'-[金额] [备注] #非必要，待月末评估'}
+  ]}
+};
+const direct = {
+  schedule:'[日期/时间] [事件名]',
+  items:'[物品名] [库存/操作]',
+  network:'@[姓名] [互动内容/偏好]',
+  'trade-review':'[大盘/持仓观察] [有无操作及逻辑]',
+  'learning-flash':'[随手记内容]'
+};
+let selectedPaletteCat = '';
+let selectedPaletteSub = '';
+
+function openPalette(){
+  document.getElementById('overlay').classList.add('show');
+  document.getElementById('subArea').style.display = 'none';
+  document.querySelectorAll('#catGrid .cat-item').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('paletteInput').value = '';
+  selectedPaletteCat=''; selectedPaletteSub='';
+  setTimeout(()=>{ document.getElementById('paletteInput').focus(); }, 50);
+}
+function closePalette(){ document.getElementById('overlay').classList.remove('show'); }
+function selectCat(cat, btn){
+  selectedPaletteCat=cat; selectedPaletteSub='';
+  document.querySelectorAll('#catGrid .cat-item').forEach(c=>c.classList.remove('selected'));
+  if(btn) btn.classList.add('selected');
+  if(subcats[cat]){
+    // 子类型显示在独立区域，主分类始终保留在原位，无需返回
+    const subArea = document.getElementById('subArea');
+    subArea.style.display = 'block';
+    const grid = document.getElementById('subGrid');
+    grid.innerHTML='';
+    subcats[cat].items.forEach(sc=>{
+      const el = document.createElement('div');
+      el.className='sub-chip';
+      el.textContent = sc.label;
+      el.onclick = ()=>{
+        grid.querySelectorAll('.sub-chip').forEach(c=>c.classList.remove('selected'));
+        el.classList.add('selected');
+        selectedPaletteSub=sc.label;
+        fillInput(sc.tpl);
+      };
+      grid.appendChild(el);
+    });
+  } else {
+    document.getElementById('subArea').style.display = 'none';
+    fillInput(direct[cat]);
+  }
+}
+function submitPalette(){
+  const value=document.getElementById('paletteInput').value.trim();
+  if(!value){ notify('请输入要记录的内容','error'); return; }
+  let ok=true;
+  if(selectedPaletteCat==='work') ok=addWorkTask(value, selectedPaletteSub.slice(0,2)||'Q2');
+  else if(selectedPaletteCat==='finance-out'){
+    const match=value.match(/^(-?\d+(?:\.\d+)?)\s+(.+)$/); if(!match){ notify('格式应为：-金额 备注','error'); return; }
+    document.getElementById('finAmount').value=match[1]; document.getElementById('finNote').value=match[2].replace(/\s*#非必要.*$/,'');
+    const target=[...document.querySelectorAll('#finNecessity .type-pill')].find(x=>x.dataset.necessity===(selectedPaletteSub.startsWith('非')?'非必要':'必要'));
+    target?.click(); submitFinance();
+  } else if(selectedPaletteCat==='schedule'){
+    document.querySelector('.nav-item[data-view="schedule"]').click(); document.getElementById('scheduleTitle').value=value; document.getElementById('scheduleTitle').scrollIntoView({behavior:'smooth',block:'center'}); notify('已带入生活日程表单，请确认频率后保存');
+  } else if(selectedPaletteCat==='items'){
+    const [name,...detail]=value.split(/\s+/); document.querySelector('.nav-item[data-view="items"]').click(); document.getElementById('itemName').value=name; document.getElementById('itemDetail').value=detail.join(' '); document.getElementById('itemLocation').focus(); notify('已带入物品表单，请补充位置后保存');
+  } else if(selectedPaletteCat==='network'){
+    const cleaned=value.replace(/^@/,''); const [name,...note]=cleaned.split(/\s+/); document.getElementById('netName').value=name; document.getElementById('netNote').value=note.join(' '); submitPerson();
+  } else if(selectedPaletteCat==='trade-review'){
+    submitTradeReview(value);
+  } else if(selectedPaletteCat==='learning-flash'){
+    document.getElementById('learnMain').value=value; submitLearning('闪念');
+  } else { notify('请先选择记录分类','error'); return; }
+  if(ok!==false) closePalette();
+}
+function fillInput(tpl){
+  const input = document.getElementById('paletteInput');
+  input.value = tpl;
+  input.focus();
+  input.select();
+}
+document.addEventListener('keydown',(e)=>{
+  if(e.altKey && e.code==='Space'){ e.preventDefault(); openPalette(); }
+  if(e.key==='Escape'){ closePalette(); }
+  if(e.key==='Enter' && document.activeElement.id==='paletteInput'){ e.preventDefault(); submitPalette(); }
+});
+document.getElementById('overlay').addEventListener('click',(e)=>{
+  if(e.target.id==='overlay'){ closePalette(); }
+});
+document.addEventListener('click',e=>{
+  const editable=e.target.closest('.editable'); if(editable && !editable.querySelector('input') && !editable.hasAttribute('onclick')) makeEditable(editable);
+  const todo=e.target.closest('.todo-row'); if(todo && !todo.hasAttribute('onclick')) toggleTodo(todo);
+});
+restoreApp();
+renderBudget(); renderPending(); renderWatchlist();
+seedScheduledTasks(); renderAllScheduleViews();
+updateScheduleFrequencyFields(); renderLifeScheduleTemplates(); renderLifeSchedulePreview();
+refreshFoodExpiry();
+upgradeLearningDomainCards();
+refreshLearningDomainOptions();
+initializeLearningDomains();
+</script>
+</body>
+</html>
