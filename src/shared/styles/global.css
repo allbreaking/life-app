@@ -3,6 +3,7 @@ html, body, #root { margin: 0; min-width: 320px; min-height: 100%; }
 body { background: var(--bg); color: var(--text); }
 button, input { font: inherit; }
 button { cursor: pointer; }
+.position-row-actions { display: flex; gap: 5px; }.position-delete-button { padding: 4px 9px; border: 0; border-radius: 7px; background: #f1f5f9; color: var(--text-dim); font-size: 10px; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; clip-path: inset(50%); }
 .skip-link { position: fixed; z-index: 200; top: 8px; left: 8px; padding: 8px 12px; border-radius: 8px; background: var(--text-strong); color: #fff; transform: translateY(-160%); }
 .skip-link:focus { transform: translateY(0); }
@@ -45,3 +46,4 @@ button { cursor: pointer; }
 @media (max-width: 900px) { .finance-overview { grid-template-columns: 1fr 1fr; }.items-view, .learning-view { grid-template-columns: 1fr; }.item-form-card, .food-list-card, .item-grid, .item-learning, .learning-form-card, .domain-grid { position: static; grid-column: 1; grid-row: auto; }.item-form-card, .learning-form-card { order: -1; }.watch-head, .watch-row { min-width: 680px; }.trade-card { overflow-x: auto; } }
 @media (max-width: 620px) { .finance-overview, .item-grid, .domain-grid { grid-template-columns: 1fr; }.finance-form-card form, .network-form form { grid-template-columns: 1fr; }.network-form form input, .network-form form .command-button { grid-column: 1; }.food-row { grid-template-columns: 1fr 1fr; }.review-form, .detail-form { flex-direction: column; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+.watch-head, .watch-row { grid-template-columns: minmax(150px, 1.5fr) repeat(5, minmax(72px, 1fr)) minmax(110px, 1fr); min-width: 800px; }

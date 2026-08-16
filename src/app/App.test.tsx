@@ -113,7 +113,7 @@ test('maps module alert states to the shared pulse animation classes', () => {
 
   fireEvent.click(screen.getByRole('button', { name: '投资' }));
   expect(screen.getByText('已跌破安全价').closest('.watch-row')).toHaveClass('alert-sky');
-  expect(screen.getByText('已达目标价').closest('.watch-row')).toHaveClass('alert-crimson');
+  expect(screen.getByText('已达中枢目标价').closest('.watch-row')).toHaveClass('alert-crimson');
 });
 
 test('renders compass principles and accepts a validated local principle draft', () => {
@@ -194,6 +194,14 @@ test('only offers watchlist instruments when creating a position', () => {
   expect(screen.getByText(/新浪行情 · 60 秒刷新/)).toBeInTheDocument();
   expect(screen.queryByPlaceholderText('现价')).not.toBeInTheDocument();
   expect(screen.queryByPlaceholderText('止损价')).not.toBeInTheDocument();
+  expect(screen.getByPlaceholderText('乐观目标价')).toBeInTheDocument();
+  expect(screen.getByPlaceholderText('中枢目标价')).toBeInTheDocument();
+  expect(screen.getByPlaceholderText('悲观目标价')).toBeInTheDocument();
+  expect(screen.getByText('距中枢目标价')).toBeInTheDocument();
+  const maotaiWatchRow = screen.getByText('已跌破安全价').closest('.watch-row');
+  expect(maotaiWatchRow).toHaveTextContent('¥1800');
+  expect(maotaiWatchRow).toHaveTextContent('¥1680');
+  expect(maotaiWatchRow).toHaveTextContent('¥1550');
   const trigger = screen.getByRole('button', { name: '观察列表标的' });
   expect(trigger.parentElement).toHaveClass('trade-select');
   expect(trigger).toHaveTextContent('600519 贵州茅台');
@@ -241,6 +249,21 @@ test('only offers watchlist instruments when creating a position', () => {
   expect(closedRow).toHaveTextContent('¥46.00');
 });
 
+test('rejects an invalid watch target range before requesting a quote', () => {
+  render(<App />);
+  fireEvent.click(screen.getByRole('button', { name: '投资' }));
+  fireEvent.change(screen.getByPlaceholderText('代码'), { target: { value: '000001' } });
+  fireEvent.change(screen.getByPlaceholderText('名称'), { target: { value: '平安银行' } });
+  fireEvent.change(screen.getByPlaceholderText('乐观目标价'), { target: { value: '10' } });
+  fireEvent.change(screen.getByPlaceholderText('中枢目标价'), { target: { value: '12' } });
+  fireEvent.change(screen.getByPlaceholderText('悲观目标价'), { target: { value: '8' } });
+  fireEvent.change(screen.getByPlaceholderText('安全价'), { target: { value: '7' } });
+  fireEvent.submit(screen.getByRole('button', { name: '加入观察列表' }).closest('form')!);
+  expect(screen.getByRole('status')).toHaveTextContent('乐观目标价 ≥ 中枢目标价 ≥ 悲观目标价');
+  expect(screen.getByRole('button', { name: '加入观察列表' })).not.toBeDisabled();
+  expect(screen.queryByText(/正在读取新浪行情/)).not.toBeInTheDocument();
+});
+
 test('edits the investment SOP in place and supports save and cancel', () => {
   render(<App />);
   fireEvent.click(screen.getByRole('button', { name: '投资' }));
@@ -280,6 +303,16 @@ test('edits and deletes daily investment reviews in place', () => {
   fireEvent.click(screen.getByRole('button', { name: '删除 2026-07-25 每日复盘' }));
   expect(screen.queryByText('复盘后继续观察量能')).not.toBeInTheDocument();
   expect(screen.getByRole('status')).toHaveTextContent('复盘已删除');
+});
+
+test('deletes an active position without creating a closed-position record', () => {
+  render(<App />);
+  fireEvent.click(screen.getByRole('button', { name: '投资' }));
+  fireEvent.click(screen.getByRole('button', { name: '删除 科大讯飞 持仓' }));
+  expect(screen.queryByRole('button', { name: '删除 科大讯飞 持仓' })).not.toBeInTheDocument();
+  expect(screen.getByRole('status')).toHaveTextContent('持仓已删除');
+  fireEvent.click(screen.getByRole('tab', { name: '已清仓' }));
+  expect(screen.queryByText('+7.85%')).not.toBeInTheDocument();
 });
 
 test('opens a full learning domain workspace and derives milestone progress', () => {

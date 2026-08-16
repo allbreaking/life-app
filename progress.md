@@ -6,7 +6,7 @@ DEV
 
 ## 当前节点
 
-PRODUCTION EMPTY DATA / COMPLETE
+TRADE WATCH TARGET RANGE / COMPLETE
 
 ## 计划
 
@@ -105,6 +105,15 @@ PRODUCTION EMPTY DATA / COMPLETE
 - [x] PRODUCTION EMPTY DATA DESIGN：区分开发/测试 fixture 与生产空状态，保留已有 SQLite 用户数据
 - [x] PRODUCTION EMPTY DATA BUILD：九模块领域初值使用编译期生产分支，生产不渲染演示总览/时间线/财务卡片
 - [x] PRODUCTION EMPTY DATA VERIFY：41 项前端测试、类型、静态规格、生产构建与 fixture 产物扫描通过
+- [x] TRADE POSITION DELETE SPEC：定义当前持仓删除与清仓历史的语义、数据和副作用边界
+- [x] TRADE POSITION DELETE BUILD：当前持仓按稳定 ID 删除，已清仓记录不受该操作影响
+- [x] TRADE POSITION DELETE VERIFY：42 项前端测试、类型、静态规格和生产构建通过
+- [x] TRADE WATCH TARGET RANGE DESIGN：定义乐观/中枢/悲观三档目标价、旧 `target` 字段兼容、输入关系与副作用边界
+- [x] TRADE WATCH TARGET RANGE REVIEW-D：用户确认继续实施（2026-08-09）
+- [x] TRADE WATCH TARGET RANGE PLAN：完成函数级规格、副作用、幂等与异常边界
+- [x] TRADE WATCH TARGET RANGE REVIEW：用户确认函数级规格并授权 BUILD（2026-08-09）
+- [x] TRADE WATCH TARGET RANGE BUILD：实现三档目标价、旧数据规范化、输入校验、展示与中枢价派生语义
+- [x] TRADE WATCH TARGET RANGE VERIFY：类型、45 项前端测试、静态规格、16 项 Rust 测试、生产构建及安全/幂等审计通过
 - [ ] P6-C2 RELEASE ENV：Developer ID 签名、公证、安装后权限冒烟、依赖漏洞审计与发布审批（需要真实凭据/联网环境）
 
 ## 当前校验
@@ -124,9 +133,11 @@ PRODUCTION EMPTY DATA / COMPLETE
 - [x] 社交人物名片、互动/重要日期结构与“不做关系评分”边界
 - [x] 投资观察列表、逐股价格预警、持仓来源限制与每日复盘结构
 - [x] 投资观察列表新增自动取价、北京时间交易窗口 60 秒轮询、陈旧行情保护与新浪来源时间
+- [x] 投资观察列表乐观/中枢/悲观三档目标价、旧 `target` 数据兼容、顺序校验及中枢价告警语义
 - [x] 投资持仓仅录入建仓价，派生展示现价、目标/安全价差和条件减半仓价
 - [x] 投资持仓建仓价原地编辑、保存/取消与派生指标即时重算
 - [x] 投资持仓浮动盈亏展示、行内清仓、已实现盈亏快照持久化与当前/已清仓 Tab
+- [x] 投资当前持仓按稳定 ID 删除，不产生清仓历史
 - [x] 投资每日复盘原地编辑、取消、删除与重启恢复
 - [x] 投资 SOP 同卡片原地编辑、保存/取消、输入校验与重启恢复
 - [x] 学习领域列表、整页工作区、里程碑派生进度与领域任务结构

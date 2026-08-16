@@ -45,10 +45,12 @@ src-tauri/
 - 总览只读聚合查询；完成任务仍调用来源任务命令。
 - EOD 联动、月末结算、持仓创建必须在单个数据库事务中完成。
 - 预警是派生结果，除通知投递记录外不重复存储。
-- 持仓的浮动盈亏、目标/安全价差与减仓价由前端纯函数使用 `trade.positions` 的建仓价和 `trade.watchlist` 的现价/目标价/安全价派生，不持久化；旧 `stop` 字段只保留解析兼容。
+- `trade.watchlist.target` 保留为中枢目标价以兼容既有 JSON 资源；`optimisticTarget` 和 `pessimisticTarget` 分别保存乐观与悲观目标价。读取旧记录时由前端纯函数以 `target` 补齐缺失的新字段，不单独触发迁移写入。
+- 持仓的浮动盈亏、中枢目标/安全价差与减仓价由前端纯函数使用 `trade.positions` 的建仓价和 `trade.watchlist` 的现价/中枢目标价/安全价派生，不持久化；旧 `stop` 字段只保留解析兼容。
 - `trade.sop` 是投资 SOP 的单值持久化资源；查看态与编辑态共用同一卡片，草稿仅保留在组件内，确认保存后才替换持久化值。
 - 持仓建仓价编辑草稿仅保留在对应行组件内；确认保存后，父组件按稳定持仓 ID 替换 `trade.positions` 中的建仓价。
 - 清仓不在两个资源间搬运数据；而是在原 `trade.positions` 实体上同时写入 `closePrice`、`profitPercent` 和 `closedAt`。两个 Tab 依据 `closedAt` 派生过滤，确保清仓状态一次替换即原子生效。
+- 当前持仓删除与清仓是两个独立命令：删除直接按 ID 过滤 `trade.positions`，清仓则保留并封存原实体。
 - 每日复盘以 `date` 作为稳定身份；行内编辑草稿仅存于对应条目组件，保存或删除后由父组件一次替换 `trade.reviews` 集合。
 - `MarketQuoteService` 位于 Rust 侧，通过固定新浪财经 adapter 批量查询 A 股快照；命令只接收数量受限的六位代码数组。React 仅负责按北京时间交易窗口调度，Rust 再次校验代码、响应大小、字段数量、有限正价格与行情时间。
 

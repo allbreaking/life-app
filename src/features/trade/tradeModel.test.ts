@@ -1,5 +1,22 @@
 import { expect, test } from 'vitest';
-import { halfPositionReductionPrice, priceAlert, realizedProfitPercent, safetyDistancePercent, targetDistancePercent, unrealizedProfitPercent } from './tradeModel';
+import { halfPositionReductionPrice, isValidTargetRange, normalizeWatch, priceAlert, realizedProfitPercent, safetyDistancePercent, targetDistancePercent, unrealizedProfitPercent } from './tradeModel';
+
+test('normalizes legacy target prices without mutating persisted input', () => {
+  const legacy = { id: 'w1', target: 40 };
+  expect(normalizeWatch(legacy)).toEqual({ id: 'w1', target: 40, optimisticTarget: 40, pessimisticTarget: 40 });
+  expect(legacy).toEqual({ id: 'w1', target: 40 });
+  const complete = { target: 40, optimisticTarget: 45, pessimisticTarget: 36 };
+  expect(normalizeWatch(complete)).toEqual(complete);
+});
+
+test('validates optimistic, central, pessimistic and safety price relationships', () => {
+  expect(isValidTargetRange(45, 40, 36, 34)).toBe(true);
+  expect(isValidTargetRange(40, 40, 40, 0)).toBe(true);
+  expect(isValidTargetRange(39, 40, 36, 34)).toBe(false);
+  expect(isValidTargetRange(45, 40, 41, 34)).toBe(false);
+  expect(isValidTargetRange(45, 40, 36, 40)).toBe(false);
+  expect(isValidTargetRange(Number.POSITIVE_INFINITY, 40, 36, 34)).toBe(false);
+});
 
 test('evaluates target and safety price independently per instrument', () => {
   expect(priceAlert(1680, 1680, 1450)).toBe('target');
