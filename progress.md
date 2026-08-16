@@ -6,7 +6,7 @@ DEV
 
 ## 当前节点
 
-TRADE WATCH TARGET RANGE / COMPLETE
+TRADE WATCH INLINE MANAGEMENT / COMPLETE
 
 ## 计划
 
@@ -114,6 +114,10 @@ TRADE WATCH TARGET RANGE / COMPLETE
 - [x] TRADE WATCH TARGET RANGE REVIEW：用户确认函数级规格并授权 BUILD（2026-08-09）
 - [x] TRADE WATCH TARGET RANGE BUILD：实现三档目标价、旧数据规范化、输入校验、展示与中枢价派生语义
 - [x] TRADE WATCH TARGET RANGE VERIFY：类型、45 项前端测试、静态规格、16 项 Rust 测试、生产构建及安全/幂等审计通过
+- [x] TRADE WATCH INLINE MANAGEMENT SPEC：定义观察标的原行编辑、代码换股取价、稳定 ID、删除引用保护与完整副作用边界
+- [x] TRADE WATCH INLINE MANAGEMENT BUILD：实现代码、名称、三档目标价和安全价原地编辑，以及无引用观察标的删除
+- [x] TRADE WATCH INLINE MANAGEMENT VERIFY：47 项前端测试、16 项 Rust 测试、类型、静态规格、生产构建、发布审计及本地浏览器交互验证通过
+- [x] TRADE WATCH INLINE SAVE FEEDBACK FIX：保存统一进入应用校验，非法输入在当前行反馈，真实浏览器验证合法保存与错误保留草稿
 - [ ] P6-C2 RELEASE ENV：Developer ID 签名、公证、安装后权限冒烟、依赖漏洞审计与发布审批（需要真实凭据/联网环境）
 
 ## 当前校验
@@ -134,6 +138,7 @@ TRADE WATCH TARGET RANGE / COMPLETE
 - [x] 投资观察列表、逐股价格预警、持仓来源限制与每日复盘结构
 - [x] 投资观察列表新增自动取价、北京时间交易窗口 60 秒轮询、陈旧行情保护与新浪来源时间
 - [x] 投资观察列表乐观/中枢/悲观三档目标价、旧 `target` 数据兼容、顺序校验及中枢价告警语义
+- [x] 投资观察列表按稳定 ID 原地编辑、代码变化重新取价、取消恢复、无引用删除与全部持仓引用保护
 - [x] 投资持仓仅录入建仓价，派生展示现价、目标/安全价差和条件减半仓价
 - [x] 投资持仓建仓价原地编辑、保存/取消与派生指标即时重算
 - [x] 投资持仓浮动盈亏展示、行内清仓、已实现盈亏快照持久化与当前/已清仓 Tab

@@ -264,6 +264,57 @@ test('rejects an invalid watch target range before requesting a quote', () => {
   expect(screen.queryByText(/正在读取新浪行情/)).not.toBeInTheDocument();
 });
 
+test('edits, cancels, and deletes an unreferenced watch item in place', async () => {
+  render(<App />);
+  fireEvent.click(screen.getByRole('button', { name: '投资' }));
+  fireEvent.click(screen.getByRole('button', { name: '编辑 贵州茅台 观察标的' }));
+  const nameEditor = screen.getByRole('textbox', { name: '编辑 贵州茅台 名称' });
+  expect(nameEditor.closest('.watch-row')).toHaveClass('watch-row-editor');
+  expect(screen.queryByRole('spinbutton', { name: /编辑 贵州茅台 现价/ })).not.toBeInTheDocument();
+  fireEvent.change(nameEditor, { target: { value: '茅台核心' } });
+  fireEvent.change(screen.getByRole('spinbutton', { name: '编辑 贵州茅台 乐观目标价' }), { target: { value: '1820' } });
+  await act(async () => fireEvent.click(screen.getByRole('button', { name: '保存 贵州茅台 观察标的' })));
+  const updatedRow = screen.getByRole('button', { name: '编辑 茅台核心 观察标的' }).closest('.watch-row');
+  expect(updatedRow).toHaveTextContent('¥1820');
+  expect(screen.getByRole('status')).toHaveTextContent('观察标的已更新');
+
+  fireEvent.click(screen.getByRole('button', { name: '编辑 茅台核心 观察标的' }));
+  fireEvent.change(screen.getByRole('textbox', { name: '编辑 茅台核心 名称' }), { target: { value: '不应保存' } });
+  fireEvent.click(screen.getByRole('button', { name: '取消编辑 茅台核心 观察标的' }));
+  expect(screen.getByRole('button', { name: '编辑 茅台核心 观察标的' })).toBeInTheDocument();
+  expect(screen.queryByDisplayValue('不应保存')).not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: '删除 茅台核心 观察标的' }));
+  expect(screen.queryByRole('button', { name: '编辑 茅台核心 观察标的' })).not.toBeInTheDocument();
+  expect(screen.getByRole('status')).toHaveTextContent('观察标的已删除');
+  const trigger = screen.getByRole('button', { name: '观察列表标的' });
+  fireEvent.click(trigger);
+  expect(screen.getAllByRole('option')).toHaveLength(1);
+  expect(screen.getByRole('option')).toHaveTextContent('002230科大讯飞');
+});
+
+test('keeps invalid watch edits in place and blocks deleting referenced items', async () => {
+  render(<App />);
+  fireEvent.click(screen.getByRole('button', { name: '投资' }));
+  fireEvent.click(screen.getByRole('button', { name: '编辑 贵州茅台 观察标的' }));
+  fireEvent.change(screen.getByRole('textbox', { name: '编辑 贵州茅台 代码' }), { target: { value: '123' } });
+  await act(async () => fireEvent.click(screen.getByRole('button', { name: '保存 贵州茅台 观察标的' })));
+  expect(screen.getByRole('alert')).toHaveTextContent('六位 A 股代码');
+  expect(screen.getByRole('alert').closest('.watch-row')).toHaveClass('watch-row-editor');
+
+  fireEvent.change(screen.getByRole('textbox', { name: '编辑 贵州茅台 代码' }), { target: { value: '600519' } });
+  fireEvent.change(screen.getByRole('spinbutton', { name: '编辑 贵州茅台 乐观目标价' }), { target: { value: '1600' } });
+  await act(async () => fireEvent.click(screen.getByRole('button', { name: '保存 贵州茅台 观察标的' })));
+  expect(screen.getByRole('status')).toHaveTextContent('乐观目标价 ≥ 中枢目标价 ≥ 悲观目标价');
+  expect(screen.getByRole('alert')).toHaveTextContent('乐观目标价 ≥ 中枢目标价 ≥ 悲观目标价');
+  expect(screen.getByRole('textbox', { name: '编辑 贵州茅台 名称' })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: '取消编辑 贵州茅台 观察标的' }));
+
+  fireEvent.click(screen.getByRole('button', { name: '删除 科大讯飞 观察标的' }));
+  expect(screen.getByRole('button', { name: '编辑 科大讯飞 观察标的' }).closest('.watch-row')).toBeInTheDocument();
+  expect(screen.getByRole('status')).toHaveTextContent('仍有关联持仓或清仓记录，不能删除');
+});
+
 test('edits the investment SOP in place and supports save and cancel', () => {
   render(<App />);
   fireEvent.click(screen.getByRole('button', { name: '投资' }));
