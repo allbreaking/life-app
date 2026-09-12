@@ -40,6 +40,9 @@ assert(icons.some((icon) => extname(icon) === '.icns'), '缺少 macOS icns 图�
 assert(icons.some((icon) => extname(icon) === '.ico'), '缺少 Windows ico 图标');
 assert(icons.some((icon) => extname(icon) === '.png'), '缺少 PNG 图标');
 
+assert(JSON.stringify(tauriConfig.bundle?.externalBin) === JSON.stringify(['binaries/life-os-mcp']), '必须只打包白名单 life-os-mcp sidecar');
+assert(packageJson.scripts?.['agent:sidecar'] === 'node scripts/prepare-agent-sidecar.mjs', '缺少可审计的 MCP sidecar 构建脚本');
+
 const dist = join(root, 'dist');
 const files = readdirSync(dist, { recursive: true, withFileTypes: true })
   .filter((entry) => entry.isFile())

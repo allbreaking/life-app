@@ -71,19 +71,22 @@ src-tauri/src/main.rs
 | 功能 | 用户入口 | React 组件/函数 | 数据资源/副作用 | 算法/规则入口 | 主要测试 |
 |---|---|---|---|---|---|
 | 今日总览 | 左侧“今日总览” | `src/features/dashboard/Dashboard.tsx::Dashboard` | `schedule.scheduled`（由 App 注入） | `scheduleState.ts::todayScheduledTasks` | `src/app/App.test.tsx` |
+| 每日输出 | 今日总览“每日输出”卡片 | `src/features/dashboard/DailyTodoCard.tsx::DailyTodoCard` | `dashboard.dailyOutput` | `dailyTodos.ts::isCompletedToday` | `src/app/App.test.tsx` |
+| 地球online日常任务 | 今日总览“地球online日常任务”卡片 | `src/features/dashboard/DailyTodoCard.tsx::DailyTodoCard` | `dashboard.dailyTasks` | `dailyTodos.ts::isCompletedToday` | `src/app/App.test.tsx` |
 | 人生原则 | 左侧“人生地图” | `src/features/compass/Compass.tsx::Compass` | `compass.principles` | 组件内长度校验 | `src/app/App.test.tsx` |
 | 工作四象限 | 左侧“工作” | `src/features/work/Work.tsx::Work` | `work.tasks`、`work.focusIds` | Q1≤2，Top3 仅 Q1/Q2 | `src/app/App.test.tsx` |
 | EOD | 工作页“EOD 日终总结” | `src/features/work/Work.tsx::EodForm` | `work.eodSubmitted` | HTML/组件表单校验 | `src/app/App.test.tsx`、静态规格 |
 | 任务排期 | 左侧“日程” | `src/features/schedule/Schedule.tsx::Schedule`、`TaskPool`、`DayCanvas` | `schedule.pool`、`schedule.scheduled` | `snapToQuarterHour`、`minutesToTime` | `src/features/schedule/scheduleModel.test.ts`、`src/app/App.test.tsx` |
 | 周/月视图 | 日程页 Tab | `WeekView`、`MonthView` | 只读 `schedule.scheduled` | 本地日期、周一为首日 | `App.test.tsx`、静态规格 |
 | 生活模板 | 日程页“新增生活日程” | `LifeTemplateManager` | `schedule.lifeSchedules` | `lifeTemplateOccursOn` | `scheduleModel.test.ts` |
-| 预算/记账 | 左侧“财务” | `src/features/finance/Finance.tsx::Finance` | 四个 `finance.*` 资源 | `parseMoneyToCents`、`budgetProgress` | `src/features/finance/financeModel.test.ts`、`src/app/App.test.tsx` |
-| 物品/食物 | 左侧“物品” | `src/features/items/Items.tsx::Items` | `items.items`、`items.foods` | `itemModel.ts::foodExpiryStatus` | `src/features/items/itemModel.test.ts`、`src/app/App.test.tsx` |
+| 预算/记账与 500 元积累目标 | 左侧“财务” | `src/features/finance/Finance.tsx::Finance` | 五个 `finance.*` 资源；预算原地编辑；目标份数可增减 | `parseMoneyToCents`、`budgetProgress`、`parsePositiveWholeUnits`、`wealthGoalProgress` | `src/features/finance/financeModel.test.ts`、`src/app/App.test.tsx` |
+| 物品/食物 | 左侧“物品” | `src/features/items/Items.tsx::Items`、`ItemRow`、`FoodRow` | `items.items`、`items.foods`（稳定 ID 原行编辑/删除） | `itemModel.ts::foodExpiryStatus` | `src/features/items/itemModel.test.ts`、`src/app/App.test.tsx` |
 | 人物卡 | 左侧“社交” | `src/features/network/Network.tsx::Network` | `network.people` | 组件内字符串校验 | `src/app/App.test.tsx` |
 | 投资 SOP | 投资页顶部卡片 | `src/features/trade/Trade.tsx::Trade` | `trade.sop` | trim、1–500 字 | `src/app/App.test.tsx` |
-| 观察列表 | 投资页“观察列表” | `Trade`、`WatchRow` | `trade.watchlist` + 新浪 HTTP | `normalizeWatch`、`isValidTargetRange`、`priceAlert` | `src/features/trade/tradeModel.test.ts`、`src/app/App.test.tsx` |
+| 观察列表 | 投资页“观察列表” | `Trade`、`WatchRow`、`WatchRatings` | `trade.watchlist` + 新浪 HTTP；搜索/评分排序为瞬时状态 | `normalizeWatch`、`parseWatchTags`、`parseOptionalWatchRating`、`isValidTargetRange`、`priceAlert`、`searchWatchlist`、`filterWatchlist`、`sortWatchlistByRating`、`paginateWatchlist` | `src/features/trade/tradeModel.test.ts`、`src/app/App.test.tsx` |
+| AI Agent 添加观察标的 | MCP `add_trade_watch` | `life-os-mcp` → Unix socket bridge → `TradeWatchService` | 原子追加 `trade.watchlist` + 幂等收据 + 新浪 HTTP | 六位代码、名称、三档目标价、标签、四维评分、request ID | Rust MCP/SQLite tests、前端 IPC/组件测试 |
 | 行情轮询 | 进入投资页后自动 | `Trade` 的行情 `useEffect` | `fetch_market_quotes` + `trade.watchlist` | `chinaMarketClock`、`isChinaMarketSession` | `src/shared/ipc/marketQuote.test.ts`、Rust tests |
-| 持仓管理 | 投资页“持仓管理” | `WatchSelect`、`PositionRow`、`ClosedPositionRow` | `trade.positions` | 五个价格/盈亏纯函数 | `src/features/trade/tradeModel.test.ts`、`src/app/App.test.tsx` |
+| 持仓管理 | 投资页“持仓管理” | `WatchSelect`、`PositionRow`、`ClosedPositionRow` | `trade.positions`；下拉代码搜索为瞬时状态 | 代码搜索、五个价格/盈亏纯函数、稳定 ID 删除 | `src/features/trade/tradeModel.test.ts`、`src/app/App.test.tsx` |
 | 每日复盘 | 投资页“每日复盘” | `Trade`、`ReviewRow` | `trade.reviews` | 本地日期唯一 | `src/app/App.test.tsx` |
 | 学习领域 | 左侧“学习” | `src/features/learning/Learning.tsx::Learning` | `learning.domains` | 完成数/总数派生 | `src/app/App.test.tsx` |
 | 快捷录入 | `⌥ Space`/应用菜单 | `src/features/quick-capture/QuickCapture.tsx` | 仅焦点和弹层状态 | Tab focus trap | `src/app/App.test.tsx` |
@@ -99,6 +102,8 @@ src-tauri/src/main.rs
 |---|---|---|---|---|
 | `compass.principles` | `Compass` | 对象标量 | `{being[], doing[]}` | `domain_value` |
 | `dashboard.completedTodoIndexes` | 当前组件未使用 | 数组 | 旧兼容资源 | `domain_entity/value` |
+| `dashboard.dailyOutput` | `DailyTodoCard` | 实体数组 | DailyTodoItem ID，`completedOn` 按日刷新 | `domain_entity` |
+| `dashboard.dailyTasks` | `DailyTodoCard` | 实体数组 | DailyTodoItem ID，`completedOn` 按日刷新 | `domain_entity` |
 | `work.tasks` | `Work` | 对象标量 | Q1–Q4 → Task[] | `domain_value` |
 | `work.focusIds` | `Work` | 字符串数组 | 最多 3 | `domain_entity`（`row-n`） |
 | `work.eodSubmitted` | `EodForm` | boolean | 仅提交标记 | `domain_value` |
@@ -109,6 +114,7 @@ src-tauri/src/main.rs
 | `finance.spentCents` | `Finance` | integer | ≥0，整数分 | `domain_value` |
 | `finance.pending` | `Finance` | 实体数组 | 待评估项 ID、正整数分 | `domain_entity` |
 | `finance.lastTransaction` | `Finance` | object/null | 有符号整数分 | `domain_value` |
+| `finance.goalCompletedUnits` | `Finance` | integer | 0–3000 份，初始 1500 | `domain_value` |
 | `items.foods` | `Items` | 实体数组 | ID、位置、到期日 | `domain_entity` |
 | `items.items` | `Items` | 实体数组 | ID、类型、位置 | `domain_entity` |
 | `network.people` | `Network` | 实体数组 | Person ID | `domain_entity` |
@@ -151,6 +157,7 @@ feature 调用 setValue
 | 算法 | 入口 | 输入 → 输出 | 边界/注意事项 |
 |---|---|---|---|
 | 今日任务筛选排序 | `scheduleState.ts::todayScheduledTasks` | ScheduledTask[] → 当天按 time 排序 | 使用设备本地日期，不是北京时间 |
+| 每日待办完成判断 | `dailyTodos.ts::isCompletedToday` | DailyTodoItem + today → boolean | `completedOn === 本地今天`，隔天自动刷新为未完成 |
 | 15 分钟吸附 | `scheduleModel.ts::snapToQuarterHour` | minute → `[0,1425]` 最近 15 分钟 | 非有限数返回 0 |
 | 分钟转时间 | `scheduleModel.ts::minutesToTime` | minute → `HH:mm` | 内部再次吸附 |
 | 重复模板投影 | `scheduleModel.ts::lifeTemplateOccursOn` | template + local Date → boolean | 双周以 anchorDate 中午差值 `%14` |
@@ -159,7 +166,9 @@ feature 调用 setValue
 | 食物到期 | `itemModel.ts::foodExpiryStatus` | `YYYY-MM-DD` + today → days/tone/label | 本地中午差；≤3 Crimson，≤7 Amber |
 | 目标价兼容 | `tradeModel.ts::normalizeWatch` | 旧 Watch → 三档 Watch | 缺失乐观/悲观时使用中枢价；不改输入对象 |
 | 目标区间校验 | `tradeModel.ts::isValidTargetRange` | 四价格 → boolean | 乐观≥中枢≥悲观>0；0≤安全<中枢 |
+| 新增目标价校验 | `tradeModel.ts::isValidTargetPrices` | 三档目标价 → boolean | 新增不读取安全价；合法记录固定 `safety: 0` |
 | 股价告警 | `tradeModel.ts::priceAlert` | current/target/safety → status | 先判达到目标，再判安全价 |
+| 四维评分/时间排序 | `sortWatchlistByRating` / `sortWatchlistNewestFirst` | Watch[] + 条件 → Watch[] | 默认最新加入优先；评分未填写时置后；不改输入 |
 | 浮动/已实现盈亏 | `unrealizedProfitPercent` / `realizedProfitPercent` | cost/current(close) → percent | 非有限或非正价格返回 NaN |
 | 目标/安全距离 | `targetDistancePercent` / `safetyDistancePercent` | cost + threshold → percent | 安全距离方向为 `cost/safety-1` |
 | 减半仓价 | `halfPositionReductionPrice` | cost/safety → price/null | 仅 cost>safety，公式 `2C-S` |
@@ -259,6 +268,7 @@ install_global_shortcut
 | 健康检查 | `health_check` | `commands/mod.rs` | 无 |
 | 资源读取 | `load_domain_resource` | `domain_resource.rs::load` | 读 SQLite；可能一次性迁移 |
 | 资源替换 | `replace_domain_resource` | `domain_resource.rs::replace` | 单资源事务写 SQLite |
+| Agent 添加观察标的 | `add_trade_watch` / MCP `add_trade_watch` | `trade_watch.rs::add_watch` | 固定行情 GET；immediate transaction 追加实体与幂等收据；窗口事件 |
 | 系统通知 | `deliver_notification` | `notification.rs` | 读写收据，可能显示 OS 通知 |
 | 创建备份 | `create_backup` | `backup.rs::create` | 写 app-managed 文件 |
 | 列出备份 | `list_backups` | `backup.rs::list` | 读目录元数据 |
@@ -279,7 +289,8 @@ install_global_shortcut
 ```text
 App
 ├─ Sidebar / page header
-├─ Dashboard (scheduled/setScheduled props)
+├─ Dashboard (scheduled/setScheduled props; dailyOutput/dailyTasks persisted)
+│  └─ DailyTodoCard (add/toggle/edit/delete local)
 ├─ Compass (principles + openForm local)
 ├─ Work (tasks/focus persisted; openForm/message local)
 │  └─ EodForm (submitted persisted)

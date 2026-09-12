@@ -1,5 +1,13 @@
 # 安全与幂等
 
+## AI Agent 本机接口
+
+- 只暴露 MCP `add_trade_watch`，不得映射通用资源替换、SQL、shell、文件和任意 URL。
+- MCP 使用 stdio；sidecar 只连接应用数据目录下固定的 `agent-v1.sock`。应用创建 socket 后设为 `0600`，不监听 TCP。
+- socket 和 stdin 单消息上限 64 KiB；请求使用拒绝未知字段的白名单结构，Rust 在网络与存储边界前完整复验。
+- `requestId` 必须为 UUID；`command_receipt` 记录 `add_trade_watch` 与结果实体 ID。相同请求返回相同实体，其他命令复用该 ID 返回冲突。
+- sidecar 不直接读取或写入 SQLite；应用进程使用 immediate transaction 原子完成幂等检查、代码判重、实体追加与收据写入。
+
 ## 输入安全
 
 - IPC 参数使用白名单 schema，拒绝额外字段。
@@ -35,4 +43,3 @@
 - 每次迁移前创建可校验备份。
 - 备份导入先在临时数据库验证 schema 和外键，再替换正式数据库。
 - 用户可恢复删除的记录保留 30 天；永久删除需二次确认。
-

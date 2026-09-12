@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Local-first personal cognitive operating system"
 authors = ["Life-OS contributors"]
 edition = "2024"
+default-run = "life-os"
 
 [lib]
 name = "life_os_lib"
@@ -20,6 +21,9 @@ tauri = { version = "2", features = ["tray-icon"] }
 thiserror = "2"
 tauri-plugin-notification = "2"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
+chrono = "0.4"
+dirs = "6"
+uuid = { version = "1", features = ["v4"] }
 
 [target."cfg(not(any(target_os = \"android\", target_os = \"ios\")))".dependencies]
 tauri-plugin-global-shortcut = "2"

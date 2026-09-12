@@ -1,5 +1,13 @@
 # 测试与发布门禁
 
+## AI Agent 添加观察标的
+
+- Rust 输入校验：六位 A 股代码、名称长度、三档价格顺序、标签去重/边界、四项 0–5 整数评分、未知字段拒绝。
+- Rust 集成：合法单实体追加、重复代码冲突、相同 request ID 返回相同实体和 result ID、失败不写入。
+- MCP：initialize、ping、tools/list 仅含 `add_trade_watch`、tools/call 参数解析、应用未运行错误、未知方法和 64 KiB 限制。
+- React：typed IPC 返回结构校验；桌面新增表单调用专用命令；`trade-watch-added` 重复事件按稳定 ID 合并。
+- 发布：externalBin 配置、host triple sidecar 准备、完整生产构建和发布审计。
+
 ## 单元测试
 
 - 四象限与 Top 3 约束。

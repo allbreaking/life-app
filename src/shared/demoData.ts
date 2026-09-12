@@ -5,6 +5,8 @@ export const isDemoMode = !import.meta.env.PROD;
 const productionDefaults: Partial<Record<DomainResource, unknown>> = {
   'compass.principles': { being: [], doing: [] },
   'dashboard.completedTodoIndexes': [],
+  'dashboard.dailyOutput': [],
+  'dashboard.dailyTasks': [],
   'work.tasks': { Q1: [], Q2: [], Q3: [], Q4: [] },
   'work.focusIds': [],
   'work.eodSubmitted': false,
@@ -15,6 +17,7 @@ const productionDefaults: Partial<Record<DomainResource, unknown>> = {
   'finance.spentCents': 0,
   'finance.pending': [],
   'finance.lastTransaction': null,
+  'finance.goalCompletedUnits': 1500,
   'items.foods': [],
   'items.items': [],
   'network.people': [],

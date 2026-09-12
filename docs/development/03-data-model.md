@@ -44,6 +44,7 @@
 ### watchlist / position / trade / daily_review
 
 - `position.watchlist_id NOT NULL REFERENCES watchlist(id)`。
+- 运行态 `trade.watchlist` 实体可选内嵌 `businessModelRating`、`profitabilityRating`、`financialStabilityRating`、`cashFlowRating` 四个 0–5 整数及 ISO 8601 `createdAt`；缺省与 0 分语义不同，字段保存在既有 `domain_entity` JSON 中，无需关系表迁移。旧 `cashFlowDividendRating` / `valuationRating` 只用于读取兼容。
 - 未清仓 position 不含 `closePrice`、`profitPercent`、`closedAt`；已清仓 position 必须同时包含三者，其中价格为有限正数、日期为 `YYYY-MM-DD`。
 - `daily_review.review_date UNIQUE`。
 - 交易明细引用 position，不允许孤立持仓。

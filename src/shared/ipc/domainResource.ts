@@ -2,10 +2,10 @@ import { invoke } from '@tauri-apps/api/core';
 import { z } from 'zod';
 
 export const domainResourceSchema = z.enum([
-  'compass.principles', 'dashboard.completedTodoIndexes',
+  'compass.principles', 'dashboard.completedTodoIndexes', 'dashboard.dailyOutput', 'dashboard.dailyTasks',
   'work.tasks', 'work.focusIds', 'work.eodSubmitted',
   'schedule.pool', 'schedule.scheduled', 'schedule.lifeSchedules',
-  'finance.budgetCents', 'finance.spentCents', 'finance.pending', 'finance.lastTransaction',
+  'finance.budgetCents', 'finance.spentCents', 'finance.pending', 'finance.lastTransaction', 'finance.goalCompletedUnits',
   'items.foods', 'items.items', 'network.people',
   'trade.watchlist', 'trade.positions', 'trade.reviews', 'trade.sop', 'learning.domains',
 ]);

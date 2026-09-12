@@ -10,6 +10,8 @@ const RESOURCES: &[(&str, &str, &str)] = &[
         "dashboard",
         "completedTodoIndexes",
     ),
+    ("dashboard.dailyOutput", "dashboard", "dailyOutput"),
+    ("dashboard.dailyTasks", "dashboard", "dailyTasks"),
     ("work.tasks", "work", "tasks"),
     ("work.focusIds", "work", "focusIds"),
     ("work.eodSubmitted", "work", "eodSubmitted"),
@@ -20,6 +22,11 @@ const RESOURCES: &[(&str, &str, &str)] = &[
     ("finance.spentCents", "finance", "spentCents"),
     ("finance.pending", "finance", "pending"),
     ("finance.lastTransaction", "finance", "lastTransaction"),
+    (
+        "finance.goalCompletedUnits",
+        "finance",
+        "goalCompletedUnits",
+    ),
     ("items.foods", "items", "foods"),
     ("items.items", "items", "items"),
     ("network.people", "network", "people"),
@@ -225,6 +232,13 @@ mod tests {
         assert_eq!(
             service.load("finance.budgetCents").unwrap(),
             Some(json!(300000))
+        );
+        service
+            .replace("finance.goalCompletedUnits", &json!(1500), "r-goal")
+            .unwrap();
+        assert_eq!(
+            service.load("finance.goalCompletedUnits").unwrap(),
+            Some(json!(1500))
         );
         service
             .replace("trade.sop", &json!("先看风险，再做决策"), "r4")

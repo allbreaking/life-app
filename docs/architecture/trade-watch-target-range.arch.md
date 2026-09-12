@@ -1,14 +1,14 @@
 # 投资观察列表三档目标价 Architecture
 
-## 最后更新：2026-08-09
+## 最后更新：2026-08-30
 
 ## 数据流
 
 ```text
 观察列表表单
-  → 六位代码/名称/四类价格校验
+  → 六位代码/名称/三档目标价校验
   → 固定新浪行情 adapter 取最近价格
-  → 构造含 optimisticTarget / target / pessimisticTarget 的 Watch
+  → 构造含 optimisticTarget / target / pessimisticTarget 且 safety=0 的 Watch
   → trade.watchlist 领域资源幂等替换
   → SQLite
 
@@ -30,7 +30,8 @@
 ## 组件责任
 
 - `normalizeWatch`：纯兼容函数，只返回新对象，不写领域资源。
-- `isValidTargetRange`：纯校验函数，统一供持久化 schema 与新增表单使用。
+- `isValidTargetPrices`：纯校验函数，供新增表单校验三档目标价；不读取安全价。
+- `isValidTargetRange`：纯校验函数，供持久化 schema 与已有标的编辑校验三档目标价和安全价。
 - `Trade`：调度领域资源、行情请求和表单反馈；校验失败时在网络与存储边界之前停止。
 - `WatchRow`：展示三档目标价；告警仍以中枢目标价和安全价派生。
 - `PositionRow`：持仓“距中枢目标价”继续使用 `target`，不持久化派生百分比。
@@ -45,7 +46,7 @@
 
 ## 安全边界
 
-- 所有用户价格先验证有限性、正数和关系；名称由 React 文本节点渲染。
+- 新增输入的三档目标价先验证有限性、正数和关系；已有标的编辑时另校验安全价为有限非负数且低于中枢目标价。名称由 React 文本节点渲染。
 - 行情响应继续由 Rust 校验代码、响应大小、价格和时间。
 - 不拼接 SQL 或 shell，不接受任意行情主机，不记录密钥或敏感数据。
 

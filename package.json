@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
+    "agent:sidecar": "node scripts/prepare-agent-sidecar.mjs",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run && node tests/verify.mjs",
     "test:prototype": "node tests/verify.mjs",

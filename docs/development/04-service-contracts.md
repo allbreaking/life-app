@@ -44,6 +44,7 @@
 
 ## TradeService
 
+- `addTradeWatch(input, requestId)`：双端校验六位 A 股代码、名称、三档目标价、标签和四维评分；事务外从固定新浪 adapter 取价，在 immediate transaction 内按代码判重、追加 `trade.watchlist` 单实体并写带 result ID 的幂等收据。副作用：一次固定主机只读 HTTPS 请求、一次 SQLite 事务，成功后可发送窗口同步事件。
 - `createPosition`：watchlistId 必填，数据库外键再次保证。
 - `updateWatchPrice`：更新现价并返回逐股预警。
 - `fetchMarketQuotes(codes)`：仅接受最多 50 个不重复的沪深北 A 股六位代码，映射为新浪固定行情标识并批量查询；返回代码、现价、行情日期和时间。副作用：只读访问 `https://hq.sinajs.cn`，不写数据库；网络/HTTP/解析失败返回 `EXTERNAL_SERVICE_ERROR`，非法输入返回 `VALIDATION_ERROR`。

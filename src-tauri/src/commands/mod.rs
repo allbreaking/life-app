@@ -1,6 +1,8 @@
 use serde::Serialize;
 use serde_json::Value;
-use tauri::State;
+use std::sync::Arc;
+
+use tauri::{AppHandle, Emitter, State};
 
 use crate::{
     backup::{BackupInfo, BackupService},
@@ -8,6 +10,7 @@ use crate::{
     error::ErrorResponse,
     market_quote::{MarketQuote, MarketQuoteService},
     notification::{DeliveryStatus, NotificationInput, NotificationService},
+    trade_watch::{AddTradeWatchInput, TradeWatch, TradeWatchService},
 };
 
 /// Fetches validated A-share snapshots from the fixed Sina Finance adapter. Side effects: sends
@@ -75,6 +78,22 @@ pub fn replace_domain_resource(
     service
         .replace(&resource, &value, &request_id)
         .map_err(Into::into)
+}
+
+/// Adds one validated A-share watch entity. Side effects: performs a fixed-host quote request,
+/// appends one SQLite entity and idempotency receipt, then emits the stable entity to the window.
+#[tauri::command]
+pub async fn add_trade_watch(
+    input: AddTradeWatchInput,
+    service: State<'_, Arc<TradeWatchService>>,
+    app: AppHandle,
+) -> Result<TradeWatch, ErrorResponse> {
+    let watch = service
+        .add_watch(input)
+        .await
+        .map_err(ErrorResponse::from)?;
+    let _ = app.emit("trade-watch-added", &watch);
+    Ok(watch)
 }
 
 /// Delivers one validated, deduplicated system notification. Side effects: reads/writes the

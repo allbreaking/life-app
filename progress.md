@@ -6,7 +6,7 @@ DEV
 
 ## 当前节点
 
-TRADE WATCH INLINE MANAGEMENT / COMPLETE
+TRADE AGENT WATCHLIST / COMPLETE
 
 ## 计划
 
@@ -118,6 +118,50 @@ TRADE WATCH INLINE MANAGEMENT / COMPLETE
 - [x] TRADE WATCH INLINE MANAGEMENT BUILD：实现代码、名称、三档目标价和安全价原地编辑，以及无引用观察标的删除
 - [x] TRADE WATCH INLINE MANAGEMENT VERIFY：47 项前端测试、16 项 Rust 测试、类型、静态规格、生产构建、发布审计及本地浏览器交互验证通过
 - [x] TRADE WATCH INLINE SAVE FEEDBACK FIX：保存统一进入应用校验，非法输入在当前行反馈，真实浏览器验证合法保存与错误保留草稿
+- [x] ITEM LIST MANAGEMENT SPEC：定义普通物品列表、食物完整清单、原行编辑/取消、稳定 ID 删除与持久化副作用
+- [x] ITEM LIST MANAGEMENT PLAN：复用 `items.items` / `items.foods` 资源，调整组件、样式和组件回归测试
+- [x] ITEM LIST MANAGEMENT BUILD：实现列表展示、普通物品与食物编辑/删除
+- [x] ITEM LIST MANAGEMENT VERIFY：类型、49 项前端测试、16 项 Rust 测试、静态规格、生产构建、CSS 25,594 B 发布审计及桌面/600px 窄屏浏览器验证通过
+- [x] TRADE WATCH FILTER PAGINATION SPEC：定义按已达中枢目标价、观察中、跌到安全价格筛选及每页 10 条分页的瞬时状态与副作用边界
+- [x] TRADE WATCH FILTER PAGINATION BUILD：观察列表增加状态筛选、结果计数、空状态及上一页/下一页导航
+- [x] TRADE WATCH FILTER PAGINATION VERIFY：类型、52 项前端测试、静态规格与生产构建通过
+- [x] TRADE WATCH TAGS DESIGN：定义标签内嵌模型、旧数据兼容、组合筛选和副作用边界
+- [x] TRADE WATCH TAGS PLAN：扩展观察列表 schema、录入/原行编辑、标签筛选、样式和回归测试
+- [x] TRADE WATCH TAGS BUILD：实现标签持久化、展示，以及价格状态与标签交集筛选
+- [x] TRADE WATCH TAGS VERIFY：类型、53 项前端测试、静态规格、生产构建、发布预算及桌面/600px 窄屏浏览器验证通过
+- [x] TRADE STOCK CODE SEARCH DESIGN：定义观察列表/持仓下拉代码子串搜索、现价距中枢口径及清仓历史删除副作用
+- [x] TRADE STOCK CODE SEARCH PLAN：共享纯函数、瞬时搜索状态、稳定 ID 删除、布局与自动回归闭环
+- [x] TRADE STOCK CODE SEARCH BUILD：实现两处股票代码搜索、现价距中枢百分比和已清仓记录删除
+- [x] TRADE STOCK CODE SEARCH VERIFY：55 项前端测试、类型、静态规格、生产构建及本地浏览器交互/控制台验证通过
+- [x] TRADE WATCH NAME SEARCH SPEC：观察列表搜索扩展为股票代码或名称子串，持仓下拉仍仅按代码搜索
+- [x] TRADE WATCH NAME SEARCH BUILD：新增代码/名称纯函数并更新搜索入口文案
+- [x] TRADE WATCH NAME SEARCH VERIFY：56 项前端测试、类型、静态规格、生产构建、发布审计及本地浏览器验证通过
+- [x] FINANCE WEALTH GOAL DESIGN：定义 3000 份 × 500 元固定目标、1500 份初始值、正整数增加与单资源持久化边界
+- [x] FINANCE WEALTH GOAL PLAN：扩展纯函数、领域资源白名单、财务进度卡、响应式样式和自动回归测试
+- [x] FINANCE WEALTH GOAL BUILD：展示份数/金额/百分比进度并支持手动增加
+- [x] FINANCE WEALTH GOAL VERIFY：60 项前端测试、16 项 Rust 测试、类型、静态规格、生产构建、发布审计及 600px 窄屏浏览器验证通过
+- [x] FINANCE WEALTH GOAL DECREASE：复用同一份数输入支持减少进度，限制结果不低于 0 并补齐组件回归测试
+- [x] FINANCE BUDGET INLINE EDIT SPEC：定义预算卡片原地编辑、保存/取消、金额校验与持久化副作用
+- [x] FINANCE BUDGET INLINE EDIT BUILD：月度预算支持原地编辑并即时重算消费进度与预警
+- [x] FINANCE BUDGET INLINE EDIT VERIFY：61 项前端测试、16 项 Rust 测试、类型、静态规格、生产构建与发布审计通过
+- [x] TRADE WATCH RATINGS DESIGN：定义四项可选 0–5 星评分、旧数据兼容、未评分语义、最新加入优先和安全价展示边界
+- [x] TRADE WATCH RATINGS PLAN：扩展观察实体、表单/原行编辑、星级摘要、筛选后分页前排序及自动回归闭环
+- [x] TRADE WATCH RATINGS BUILD：观察列表移除安全价展示，新增四维评分录入、编辑、展示、最新加入优先与评分排序
+- [x] TRADE WATCH RATINGS VERIFY：63 项前端测试、16 项 Rust 测试、类型、静态规格、生产构建、发布审计及本地浏览器布局/交互验证通过
+- [x] TRADE WATCH RATINGS REFINEMENT：精简为商业模式、盈利能力、财务稳定性、现金流四维评分，兼容旧评分并默认最新加入优先
+- [x] TRADE WATCH RATINGS LAYOUT：新增区改为三行四列均匀网格，统一输入/评分下拉风格并收紧名称列
+- [x] TRADE WATCH RATINGS REVERIFY：64 项前端测试、16 项 Rust 测试、生产构建、发布审计及真实浏览器展示/编辑态验证通过
+- [x] TRADE WATCH ADD SAFETY REMOVAL SPEC：新增观察标的不展示、读取或校验安全价；新记录以 `safety: 0` 兼容既有结构
+- [x] TRADE WATCH ADD SAFETY REMOVAL BUILD：新增区移除安全价输入，拆分三档目标价校验并补充组件/纯函数测试
+- [x] TRADE WATCH ADD SAFETY REMOVAL VERIFY：65 项前端测试、16 项 Rust 测试、生产构建、发布审计及真实浏览器布局验证通过
+- [x] TRADE WATCH TARGET DISTANCES SPEC：定义现价下方距乐观、距中枢、距悲观三项派生展示及无副作用边界
+- [x] TRADE WATCH TARGET DISTANCES BUILD：复用目标距离函数扩展现价单元格与组件测试
+- [x] TRADE WATCH TARGET DISTANCES VERIFY：65 项前端测试、16 项 Rust 测试、生产构建、发布审计及真实浏览器布局验证通过
+- [x] TRADE AGENT WATCHLIST SPEC：定义本机 MCP sidecar、Unix socket bridge、专用领域命令及完整副作用边界
+- [x] TRADE AGENT WATCHLIST DESIGN：确定不开放 TCP/通用资源替换，应用进程内原子追加并通过事件同步 UI
+- [x] TRADE AGENT WATCHLIST PLAN：确定 Rust 服务、bridge、MCP、前端复用、打包和自动验证顺序
+- [x] TRADE AGENT WATCHLIST BUILD：实现共享 Rust TradeWatchService、Tauri command/event、0600 Unix socket bridge、MCP stdio sidecar 与 `.app` externalBin
+- [x] TRADE AGENT WATCHLIST VERIFY：68 项前端测试、24 项 Rust 测试、类型、静态规格、生产构建、发布审计、macOS `.app` bundle、MCP 工具发现、失败零写入及多实例 socket 保护通过
 - [ ] P6-C2 RELEASE ENV：Developer ID 签名、公证、安装后权限冒烟、依赖漏洞审计与发布审批（需要真实凭据/联网环境）
 
 ## 当前校验
@@ -133,16 +177,28 @@ TRADE WATCH INLINE MANAGEMENT / COMPLETE
 - [x] 日程日/周/月视图、来源任务池、排期/退回与 15 分钟吸附
 - [x] 生活模板重复规则投影与日历只读边界
 - [x] 财务整数金额、必要/非必要分流、预算进度预警与月末评估
+- [x] 财务月度预算原地编辑、保存/取消、金额校验与即时进度重算
+- [x] 财务 3000 份 × 500 元长期目标、1500 份初始进度、严格正整数增减与 SQLite 持久化
 - [x] 物品位置约束、食物完整清单与 3/7 天到期预警边界
+- [x] 物品/食物列表展示、原行编辑/取消、稳定 ID 删除与食物预警即时重算
 - [x] 社交人物名片、互动/重要日期结构与“不做关系评分”边界
 - [x] 投资观察列表、逐股价格预警、持仓来源限制与每日复盘结构
 - [x] 投资观察列表新增自动取价、北京时间交易窗口 60 秒轮询、陈旧行情保护与新浪来源时间
 - [x] 投资观察列表乐观/中枢/悲观三档目标价、旧 `target` 数据兼容、顺序校验及中枢价告警语义
 - [x] 投资观察列表按稳定 ID 原地编辑、代码变化重新取价、取消恢复、无引用删除与全部持仓引用保护
+- [x] 投资观察列表按已达中枢目标价、已跌破安全价、观察中筛选及每页 10 条分页
+- [x] 投资观察标的标签新增/编辑/展示、旧数据空标签兼容及标签组合筛选
+- [x] 投资观察列表按股票代码或名称子串搜索并与状态/标签/分页组合，现价下方按对应目标价/现价-1 展示距乐观、距中枢、距悲观百分比
+- [x] 投资观察列表商业模式、盈利能力、财务稳定性、现金流四项可选 0–5 星评分，安全价不展示但继续参与风控语义
+- [x] 投资观察列表按任一评分维度稳定升降序排列，未评分置后并在筛选后分页前执行
+- [x] 投资观察列表默认按加入时间倒序，最新加入标的置顶；旧无时间记录按原数组后项视为较新
+- [x] 投资观察列表新增区不再录入或校验安全价，仅校验三档目标价并以 `safety: 0` 兼容存储
+- [x] 投资持仓选股下拉按股票代码子串搜索，搜索仅影响候选项
 - [x] 投资持仓仅录入建仓价，派生展示现价、目标/安全价差和条件减半仓价
 - [x] 投资持仓建仓价原地编辑、保存/取消与派生指标即时重算
 - [x] 投资持仓浮动盈亏展示、行内清仓、已实现盈亏快照持久化与当前/已清仓 Tab
 - [x] 投资当前持仓按稳定 ID 删除，不产生清仓历史
+- [x] 投资已清仓记录按稳定持仓 ID 删除，不级联观察标的
 - [x] 投资每日复盘原地编辑、取消、删除与重启恢复
 - [x] 投资 SOP 同卡片原地编辑、保存/取消、输入校验与重启恢复
 - [x] 学习领域列表、整页工作区、里程碑派生进度与领域任务结构

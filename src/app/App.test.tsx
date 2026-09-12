@@ -1,13 +1,15 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, expect, test, vi } from 'vitest';
 import { App } from './App';
 
 let desktopAction: ((event: { payload: string }) => void) | undefined;
 let menuTodoComplete: ((event: { payload: string }) => void) | undefined;
+let tradeWatchAdded: ((event: { payload: unknown }) => void) | undefined;
 vi.mock('@tauri-apps/api/event', () => ({
-  listen: vi.fn((name: string, handler: (event: { payload: string }) => void) => {
-    if (name === 'desktop-action') desktopAction = handler;
-    if (name === 'menu-todo-complete') menuTodoComplete = handler;
+  listen: vi.fn((name: string, handler: (event: { payload: never }) => void) => {
+    if (name === 'desktop-action') desktopAction = handler as typeof desktopAction;
+    if (name === 'menu-todo-complete') menuTodoComplete = handler as typeof menuTodoComplete;
+    if (name === 'trade-watch-added') tradeWatchAdded = handler as typeof tradeWatchAdded;
     return Promise.resolve(vi.fn());
   }),
 }));
@@ -102,18 +104,24 @@ test('matches the frozen dashboard information structure', () => {
 });
 
 test('maps module alert states to the shared pulse animation classes', () => {
-  render(<App />);
-  expect(screen.getByRole('heading', { name: /预警聚合/ }).closest('section')).toHaveClass('alert-crimson');
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date(2026, 7, 16, 12));
+  try {
+    render(<App />);
+    expect(screen.getByRole('heading', { name: /预警聚合/ }).closest('section')).toHaveClass('alert-crimson');
 
-  fireEvent.click(screen.getByRole('button', { name: '财务' }));
-  expect(screen.getByRole('heading', { name: '月度预算' }).closest('section')).toHaveClass('alert-amber');
+    fireEvent.click(screen.getByRole('button', { name: '财务' }));
+    expect(screen.getByRole('heading', { name: '月度预算' }).closest('section')).toHaveClass('alert-amber');
 
-  fireEvent.click(screen.getByRole('button', { name: '物品' }));
-  expect(screen.getByText(/已过期/).closest('.food-row')).toHaveClass('alert-crimson');
+    fireEvent.click(screen.getByRole('button', { name: '物品' }));
+    expect(screen.getAllByText(/已过期/)[0].closest('.food-row')).toHaveClass('alert-crimson');
 
-  fireEvent.click(screen.getByRole('button', { name: '投资' }));
-  expect(screen.getByText('已跌破安全价').closest('.watch-row')).toHaveClass('alert-sky');
-  expect(screen.getByText('已达中枢目标价').closest('.watch-row')).toHaveClass('alert-crimson');
+    fireEvent.click(screen.getByRole('button', { name: '投资' }));
+    expect(screen.getByText('已跌破安全价', { selector: '.chip' }).closest('.watch-row')).toHaveClass('alert-sky');
+    expect(screen.getByText('已达中枢目标价', { selector: '.chip' }).closest('.watch-row')).toHaveClass('alert-crimson');
+  } finally {
+    vi.useRealTimers();
+  }
 });
 
 test('renders compass principles and accepts a validated local principle draft', () => {
@@ -167,6 +175,62 @@ test('routes non-essential expenses into the month-end queue', () => {
   expect(screen.getByText(/新键盘/)).toBeInTheDocument();
 });
 
+test('shows the 500 yuan goal and manually increases validated units', () => {
+  render(<App />);
+  fireEvent.click(screen.getByRole('button', { name: '财务' }));
+  expect(screen.getByRole('progressbar', { name: '500 元积累目标进度' })).toHaveAttribute('aria-valuenow', '1500');
+  expect(screen.getByText(/750,000 \/ ¥1,500,000/)).toBeInTheDocument();
+
+  fireEvent.change(screen.getByPlaceholderText('本次变动份数'), { target: { value: '10' } });
+  fireEvent.click(screen.getByRole('button', { name: '增加进度' }));
+  expect(screen.getByRole('progressbar', { name: '500 元积累目标进度' })).toHaveAttribute('aria-valuenow', '1510');
+  expect(screen.getByRole('status')).toHaveTextContent('已增加 10 份（¥5,000）');
+
+  fireEvent.change(screen.getByPlaceholderText('本次变动份数'), { target: { value: '1491' } });
+  fireEvent.click(screen.getByRole('button', { name: '增加进度' }));
+  expect(screen.getByRole('status')).toHaveTextContent('最多还可增加 1490 份');
+  expect(screen.getByRole('progressbar', { name: '500 元积累目标进度' })).toHaveAttribute('aria-valuenow', '1510');
+
+  fireEvent.change(screen.getByPlaceholderText('本次变动份数'), { target: { value: '10' } });
+  fireEvent.click(screen.getByRole('button', { name: '减少进度' }));
+  expect(screen.getByRole('progressbar', { name: '500 元积累目标进度' })).toHaveAttribute('aria-valuenow', '1500');
+  expect(screen.getByRole('status')).toHaveTextContent('已减少 10 份（¥5,000）');
+
+  fireEvent.change(screen.getByPlaceholderText('本次变动份数'), { target: { value: '1501' } });
+  fireEvent.click(screen.getByRole('button', { name: '减少进度' }));
+  expect(screen.getByRole('status')).toHaveTextContent('最多可减少 1500 份');
+  expect(screen.getByRole('progressbar', { name: '500 元积累目标进度' })).toHaveAttribute('aria-valuenow', '1500');
+});
+
+test('edits and cancels the monthly budget in place', () => {
+  render(<App />);
+  fireEvent.click(screen.getByRole('button', { name: '财务' }));
+  const budgetCard = screen.getByRole('heading', { name: '月度预算' }).closest('section') as HTMLElement;
+
+  fireEvent.click(within(budgetCard).getByRole('button', { name: '修改月度预算' }));
+  const editor = within(budgetCard).getByRole('textbox', { name: '月度预算金额' });
+  expect(editor).toHaveValue('3000.00');
+  fireEvent.change(editor, { target: { value: '4000' } });
+  fireEvent.click(within(budgetCard).getByRole('button', { name: '取消' }));
+  expect(within(budgetCard).getByRole('button', { name: '修改月度预算' })).toHaveTextContent('¥3,000.00');
+
+  fireEvent.click(within(budgetCard).getByRole('button', { name: '修改月度预算' }));
+  fireEvent.keyDown(within(budgetCard).getByRole('textbox', { name: '月度预算金额' }), { key: 'Escape' });
+  expect(within(budgetCard).queryByRole('textbox', { name: '月度预算金额' })).not.toBeInTheDocument();
+
+  fireEvent.click(within(budgetCard).getByRole('button', { name: '修改月度预算' }));
+  fireEvent.change(within(budgetCard).getByRole('textbox', { name: '月度预算金额' }), { target: { value: '-1' } });
+  fireEvent.click(within(budgetCard).getByRole('button', { name: '保存' }));
+  expect(screen.getByRole('status')).toHaveTextContent('请输入大于 0、最多两位小数的月度预算');
+  expect(within(budgetCard).getByRole('textbox', { name: '月度预算金额' })).toBeInTheDocument();
+
+  fireEvent.change(within(budgetCard).getByRole('textbox', { name: '月度预算金额' }), { target: { value: '4000' } });
+  fireEvent.click(within(budgetCard).getByRole('button', { name: '保存' }));
+  expect(within(budgetCard).getByRole('button', { name: '修改月度预算' })).toHaveTextContent('¥4,000.00');
+  expect(budgetCard).toHaveTextContent('已用 62%');
+  expect(screen.getByRole('status')).toHaveTextContent('月度预算已更新为 ¥4,000.00');
+});
+
 test('requires a location and expiry date for food items', () => {
   render(<App />);
   fireEvent.click(screen.getByRole('button', { name: '物品' }));
@@ -178,6 +242,49 @@ test('requires a location and expiry date for food items', () => {
   fireEvent.change(screen.getByPlaceholderText(/存放位置/), { target: { value: '冰箱' } });
   fireEvent.submit(form);
   expect(screen.getByRole('status')).toHaveTextContent('食物必须填写到期日');
+});
+
+test('shows inventory as lists and supports inline item edit, cancel, and delete', () => {
+  render(<App />);
+  fireEvent.click(screen.getByRole('button', { name: '物品' }));
+  expect(screen.getByRole('heading', { name: /物品清单/ })).toBeInTheDocument();
+  expect(screen.getByText('净水器滤芯').closest('.item-list-row')).toHaveTextContent('厨房水槽下');
+
+  fireEvent.click(screen.getByRole('button', { name: '编辑 净水器滤芯 物品' }));
+  fireEvent.change(screen.getByLabelText('编辑 净水器滤芯 名称'), { target: { value: '   ' } });
+  fireEvent.click(screen.getByRole('button', { name: '保存 净水器滤芯 物品' }));
+  expect(screen.getByRole('alert')).toHaveTextContent('物品名称和存放位置必填');
+  fireEvent.click(screen.getByRole('button', { name: '取消编辑 净水器滤芯 物品' }));
+
+  fireEvent.click(screen.getByRole('button', { name: '编辑 净水器滤芯 物品' }));
+  fireEvent.change(screen.getByLabelText('编辑 净水器滤芯 位置'), { target: { value: '储物间' } });
+  fireEvent.click(screen.getByRole('button', { name: '取消编辑 净水器滤芯 物品' }));
+  expect(screen.getByText('净水器滤芯').closest('.item-list-row')).toHaveTextContent('厨房水槽下');
+
+  fireEvent.click(screen.getByRole('button', { name: '编辑 净水器滤芯 物品' }));
+  fireEvent.change(screen.getByLabelText('编辑 净水器滤芯 名称'), { target: { value: '净水滤芯' } });
+  fireEvent.change(screen.getByLabelText('编辑 净水器滤芯 位置'), { target: { value: '储物间' } });
+  fireEvent.click(screen.getByRole('button', { name: '保存 净水器滤芯 物品' }));
+  expect(screen.getByRole('status')).toHaveTextContent('物品已保存');
+  expect(screen.getByText('净水滤芯').closest('.item-list-row')).toHaveTextContent('储物间');
+
+  fireEvent.click(screen.getByRole('button', { name: '删除 净水滤芯 物品' }));
+  expect(screen.queryByText('净水滤芯')).not.toBeInTheDocument();
+  expect(screen.getByRole('status')).toHaveTextContent('物品已删除');
+});
+
+test('supports inline food edit with expiry recalculation and delete', () => {
+  render(<App />);
+  fireEvent.click(screen.getByRole('button', { name: '物品' }));
+  fireEvent.click(screen.getByRole('button', { name: '编辑 鲜牛奶 食物' }));
+  fireEvent.change(screen.getByLabelText('编辑 鲜牛奶 到期日'), { target: { value: '2099-12-31' } });
+  fireEvent.click(screen.getByRole('button', { name: '保存 鲜牛奶 食物' }));
+  expect(screen.getByRole('status')).toHaveTextContent('食物已保存，到期预警已更新');
+  expect(screen.getByText('鲜牛奶').closest('.food-row')).not.toHaveClass('alert-crimson');
+
+  fireEvent.click(screen.getByRole('button', { name: '删除 鲜牛奶 食物' }));
+  expect(screen.queryByText('鲜牛奶')).not.toBeInTheDocument();
+  expect(screen.getByRole('status')).toHaveTextContent('食物已删除');
 });
 
 test('keeps social records factual without relationship scoring', () => {
@@ -194,19 +301,38 @@ test('only offers watchlist instruments when creating a position', () => {
   expect(screen.getByText(/新浪行情 · 60 秒刷新/)).toBeInTheDocument();
   expect(screen.queryByPlaceholderText('现价')).not.toBeInTheDocument();
   expect(screen.queryByPlaceholderText('止损价')).not.toBeInTheDocument();
-  expect(screen.getByPlaceholderText('乐观目标价')).toBeInTheDocument();
-  expect(screen.getByPlaceholderText('中枢目标价')).toBeInTheDocument();
-  expect(screen.getByPlaceholderText('悲观目标价')).toBeInTheDocument();
+  expect(screen.getByRole('spinbutton', { name: '乐观目标价' })).toBeInTheDocument();
+  expect(screen.getByRole('spinbutton', { name: '中枢目标价' })).toBeInTheDocument();
+  expect(screen.getByRole('spinbutton', { name: '悲观目标价' })).toBeInTheDocument();
+  expect(screen.getByRole('combobox', { name: '商业模式评分' })).not.toBeRequired();
+  expect(within(screen.getByRole('button', { name: '加入观察列表' }).closest('form')!).queryByRole('spinbutton', { name: '安全价' })).not.toBeInTheDocument();
   expect(screen.getByText('距中枢目标价')).toBeInTheDocument();
-  const maotaiWatchRow = screen.getByText('已跌破安全价').closest('.watch-row');
+  expect(screen.queryByText('安全价', { selector: '.watch-head span' })).not.toBeInTheDocument();
+  const maotaiWatchRow = screen.getByText('已跌破安全价', { selector: '.chip' }).closest('.watch-row');
   expect(maotaiWatchRow).toHaveTextContent('¥1800');
   expect(maotaiWatchRow).toHaveTextContent('¥1680');
   expect(maotaiWatchRow).toHaveTextContent('¥1550');
+  expect(maotaiWatchRow).toHaveTextContent('距乐观 +24.83%');
+  expect(maotaiWatchRow).toHaveTextContent('距中枢 +16.50%');
+  expect(maotaiWatchRow).toHaveTextContent('距悲观 +7.49%');
+  const maotaiRatings = within(maotaiWatchRow as HTMLElement).getByLabelText('贵州茅台 四维评分');
+  expect(within(maotaiRatings).getByLabelText('商业模式 5 星')).toHaveTextContent('★★★★★');
+  expect(within(maotaiRatings).getByLabelText('现金流 5 星')).toHaveTextContent('★★★★★');
+  expect(within(maotaiRatings).queryByText('当前估值')).not.toBeInTheDocument();
   const trigger = screen.getByRole('button', { name: '观察列表标的' });
   expect(trigger.parentElement).toHaveClass('trade-select');
   expect(trigger).toHaveTextContent('600519 贵州茅台');
   fireEvent.click(trigger);
-  const options = screen.getAllByRole('option');
+  const positionSearch = screen.getByRole('searchbox', { name: '按股票代码搜索持仓标的' });
+  fireEvent.change(positionSearch, { target: { value: '002' } });
+  const filteredPositionOptions = within(screen.getByRole('listbox', { name: '观察列表标的选项' }));
+  expect(filteredPositionOptions.getAllByRole('option')).toHaveLength(1);
+  expect(filteredPositionOptions.getByRole('option')).toHaveTextContent('002230科大讯飞');
+  fireEvent.change(positionSearch, { target: { value: '999' } });
+  expect(screen.getByText('无匹配股票代码')).toBeInTheDocument();
+  expect(filteredPositionOptions.queryByRole('option')).not.toBeInTheDocument();
+  fireEvent.change(positionSearch, { target: { value: '' } });
+  const options = within(screen.getByRole('listbox', { name: '观察列表标的选项' })).getAllByRole('option');
   expect(options).toHaveLength(2);
   expect(options[0]).toHaveTextContent('600519贵州茅台');
   expect(options[0]).toHaveAttribute('aria-selected', 'true');
@@ -247,17 +373,84 @@ test('only offers watchlist instruments when creating a position', () => {
   expect(closedRow).toHaveTextContent('002230 科大讯飞');
   expect(closedRow).toHaveTextContent('¥40.00');
   expect(closedRow).toHaveTextContent('¥46.00');
+  fireEvent.click(screen.getByRole('button', { name: '删除 科大讯飞 清仓记录' }));
+  expect(screen.queryByText('+15.00%')).not.toBeInTheDocument();
+  expect(screen.getByRole('status')).toHaveTextContent('清仓记录已删除');
+});
+
+test('merges an agent-added watch event by stable id without restarting', async () => {
+  Object.defineProperty(window, '__TAURI_INTERNALS__', {
+    configurable: true,
+    value: { invoke: vi.fn().mockResolvedValue(null) },
+  });
+  render(<App />);
+  fireEvent.click(screen.getByRole('button', { name: '投资' }));
+  await act(async () => undefined);
+  const watch = {
+    id: '018fb47d-4dc7-7e9a-8a6f-5df4f34c6910', code: '000001', name: '平安银行',
+    optimisticTarget: 15, target: 13, pessimisticTarget: 11, safety: 0, current: 12.5, tags: ['银行'],
+    businessModelRating: 4, quoteAt: '2026-08-30T15:00:00', createdAt: '2026-08-30T15:01:00.000Z',
+  };
+  await act(async () => tradeWatchAdded?.({ payload: watch }));
+  await act(async () => tradeWatchAdded?.({ payload: watch }));
+  expect(screen.getAllByRole('button', { name: '编辑 平安银行 观察标的' })).toHaveLength(1);
+  Reflect.deleteProperty(window, '__TAURI_INTERNALS__');
+});
+
+test('filters the investment watchlist by derived price status', () => {
+  render(<App />);
+  fireEvent.click(screen.getByRole('button', { name: '投资' }));
+  expect(screen.getByText('2 个标的')).toBeInTheDocument();
+  expect(screen.getByText('第 1 / 1 页')).toBeInTheDocument();
+
+  const editOrder = () => screen.getAllByRole('button', { name: /编辑 .* 观察标的/ }).map((button) => button.getAttribute('aria-label'));
+  expect(editOrder()).toEqual(['编辑 科大讯飞 观察标的', '编辑 贵州茅台 观察标的']);
+  fireEvent.change(screen.getByRole('combobox', { name: '按评分维度排序' }), { target: { value: 'profitabilityRating' } });
+  expect(editOrder()).toEqual(['编辑 贵州茅台 观察标的', '编辑 科大讯飞 观察标的']);
+  fireEvent.click(screen.getByRole('button', { name: '切换评分排序方向' }));
+  expect(editOrder()).toEqual(['编辑 科大讯飞 观察标的', '编辑 贵州茅台 观察标的']);
+
+  const codeSearch = screen.getByRole('searchbox', { name: '按股票代码或名称搜索观察列表' });
+  fireEvent.change(codeSearch, { target: { value: ' 600 ' } });
+  expect(screen.getByText('1 个标的')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: '编辑 贵州茅台 观察标的' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: '编辑 科大讯飞 观察标的' })).not.toBeInTheDocument();
+  fireEvent.change(codeSearch, { target: { value: '讯飞' } });
+  expect(screen.getByText('1 个标的')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: '编辑 科大讯飞 观察标的' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: '编辑 贵州茅台 观察标的' })).not.toBeInTheDocument();
+  fireEvent.change(codeSearch, { target: { value: '' } });
+
+  fireEvent.click(screen.getByRole('button', { name: '已达中枢目标价' }));
+  expect(screen.getByText('1 个标的')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: '编辑 科大讯飞 观察标的' })).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: '编辑 贵州茅台 观察标的' })).not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: '观察中' }));
+  expect(screen.getByText('0 个标的')).toBeInTheDocument();
+  expect(screen.getByText('暂无符合条件的观察标的')).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: '已跌破安全价' }));
+  expect(screen.getByText('1 个标的')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: '编辑 贵州茅台 观察标的' })).toBeInTheDocument();
+
+  fireEvent.change(screen.getByRole('combobox', { name: '按标签筛选' }), { target: { value: 'AI' } });
+  expect(screen.getByText('0 个标的')).toBeInTheDocument();
+  expect(screen.getByText('暂无符合条件的观察标的')).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: '全部' }));
+  expect(screen.getByText('1 个标的')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: '编辑 科大讯飞 观察标的' })).toBeInTheDocument();
 });
 
 test('rejects an invalid watch target range before requesting a quote', () => {
   render(<App />);
   fireEvent.click(screen.getByRole('button', { name: '投资' }));
-  fireEvent.change(screen.getByPlaceholderText('代码'), { target: { value: '000001' } });
-  fireEvent.change(screen.getByPlaceholderText('名称'), { target: { value: '平安银行' } });
-  fireEvent.change(screen.getByPlaceholderText('乐观目标价'), { target: { value: '10' } });
-  fireEvent.change(screen.getByPlaceholderText('中枢目标价'), { target: { value: '12' } });
-  fireEvent.change(screen.getByPlaceholderText('悲观目标价'), { target: { value: '8' } });
-  fireEvent.change(screen.getByPlaceholderText('安全价'), { target: { value: '7' } });
+  fireEvent.change(screen.getByRole('textbox', { name: '股票代码' }), { target: { value: '000001' } });
+  fireEvent.change(screen.getByRole('textbox', { name: '股票名称' }), { target: { value: '平安银行' } });
+  fireEvent.change(screen.getByRole('spinbutton', { name: '乐观目标价' }), { target: { value: '10' } });
+  fireEvent.change(screen.getByRole('spinbutton', { name: '中枢目标价' }), { target: { value: '12' } });
+  fireEvent.change(screen.getByRole('spinbutton', { name: '悲观目标价' }), { target: { value: '8' } });
   fireEvent.submit(screen.getByRole('button', { name: '加入观察列表' }).closest('form')!);
   expect(screen.getByRole('status')).toHaveTextContent('乐观目标价 ≥ 中枢目标价 ≥ 悲观目标价');
   expect(screen.getByRole('button', { name: '加入观察列表' })).not.toBeDisabled();
@@ -272,11 +465,15 @@ test('edits, cancels, and deletes an unreferenced watch item in place', async ()
   expect(nameEditor.closest('.watch-row')).toHaveClass('watch-row-editor');
   expect(screen.queryByRole('spinbutton', { name: /编辑 贵州茅台 现价/ })).not.toBeInTheDocument();
   fireEvent.change(nameEditor, { target: { value: '茅台核心' } });
+  fireEvent.change(screen.getByRole('textbox', { name: '编辑 贵州茅台 标签' }), { target: { value: '消费，价值，消费' } });
   fireEvent.change(screen.getByRole('spinbutton', { name: '编辑 贵州茅台 乐观目标价' }), { target: { value: '1820' } });
+  fireEvent.change(screen.getByRole('combobox', { name: '编辑 贵州茅台 现金流评分' }), { target: { value: '0' } });
   await act(async () => fireEvent.click(screen.getByRole('button', { name: '保存 贵州茅台 观察标的' })));
   const updatedRow = screen.getByRole('button', { name: '编辑 茅台核心 观察标的' }).closest('.watch-row');
   expect(updatedRow).toHaveTextContent('¥1820');
-  expect(screen.getByRole('status')).toHaveTextContent('观察标的已更新');
+  expect(updatedRow).toHaveTextContent('消费');
+  expect(updatedRow).toHaveTextContent('价值');
+  expect(within(updatedRow as HTMLElement).getByLabelText('现金流 0 星')).toHaveTextContent('☆☆☆☆☆');
 
   fireEvent.click(screen.getByRole('button', { name: '编辑 茅台核心 观察标的' }));
   fireEvent.change(screen.getByRole('textbox', { name: '编辑 茅台核心 名称' }), { target: { value: '不应保存' } });
@@ -289,14 +486,19 @@ test('edits, cancels, and deletes an unreferenced watch item in place', async ()
   expect(screen.getByRole('status')).toHaveTextContent('观察标的已删除');
   const trigger = screen.getByRole('button', { name: '观察列表标的' });
   fireEvent.click(trigger);
-  expect(screen.getAllByRole('option')).toHaveLength(1);
-  expect(screen.getByRole('option')).toHaveTextContent('002230科大讯飞');
+  const positionOptions = within(screen.getByRole('listbox', { name: '观察列表标的选项' }));
+  expect(positionOptions.getAllByRole('option')).toHaveLength(1);
+  expect(positionOptions.getByRole('option')).toHaveTextContent('002230科大讯飞');
 });
 
 test('keeps invalid watch edits in place and blocks deleting referenced items', async () => {
   render(<App />);
   fireEvent.click(screen.getByRole('button', { name: '投资' }));
   fireEvent.click(screen.getByRole('button', { name: '编辑 贵州茅台 观察标的' }));
+  fireEvent.change(screen.getByRole('textbox', { name: '编辑 贵州茅台 标签' }), { target: { value: '123456789012345678901' } });
+  await act(async () => fireEvent.click(screen.getByRole('button', { name: '保存 贵州茅台 观察标的' })));
+  expect(screen.getByRole('alert')).toHaveTextContent('标签最多 10 个，每个最多 20 个字符');
+  fireEvent.change(screen.getByRole('textbox', { name: '编辑 贵州茅台 标签' }), { target: { value: '消费，核心资产' } });
   fireEvent.change(screen.getByRole('textbox', { name: '编辑 贵州茅台 代码' }), { target: { value: '123' } });
   await act(async () => fireEvent.click(screen.getByRole('button', { name: '保存 贵州茅台 观察标的' })));
   expect(screen.getByRole('alert')).toHaveTextContent('六位 A 股代码');

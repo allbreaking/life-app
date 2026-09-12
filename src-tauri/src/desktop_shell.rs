@@ -1,9 +1,9 @@
 use serde::{Deserialize, Serialize};
+use std::sync::Mutex;
 use tauri::menu::{Menu, MenuBuilder, MenuItem, SubmenuBuilder};
-use tauri::{Emitter, Manager, State};
 #[cfg(target_os = "macos")]
 use tauri::tray::TrayIconBuilder;
-use std::sync::Mutex;
+use tauri::{Emitter, Manager, State};
 #[cfg(desktop)]
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
@@ -29,7 +29,11 @@ fn action_for_menu_id(id: &str) -> Option<DesktopAction> {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
-pub struct MenuBarTodoInput { id: String, time: String, title: String }
+pub struct MenuBarTodoInput {
+    id: String,
+    time: String,
+    title: String,
+}
 
 pub struct MenuBarTodoState {
     current_id: Mutex<Option<String>>,
@@ -43,35 +47,79 @@ pub struct MenuBarTodoState {
 
 fn validate_menu_todo(todo: &MenuBarTodoInput) -> bool {
     let time = todo.time.as_bytes();
-    !todo.id.is_empty() && todo.id.len() <= 100
-        && todo.id.chars().all(|c| c.is_ascii_alphanumeric() || ".:_-".contains(c))
-        && time.len() == 5 && time[0].is_ascii_digit() && time[1].is_ascii_digit()
-        && time[2] == b':' && time[3].is_ascii_digit() && time[4].is_ascii_digit()
+    !todo.id.is_empty()
+        && todo.id.len() <= 100
+        && todo
+            .id
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || ".:_-".contains(c))
+        && time.len() == 5
+        && time[0].is_ascii_digit()
+        && time[1].is_ascii_digit()
+        && time[2] == b':'
+        && time[3].is_ascii_digit()
+        && time[4].is_ascii_digit()
         && (time[0] - b'0') * 10 + time[1] - b'0' < 24
         && (time[3] - b'0') * 10 + time[4] - b'0' < 60
-        && !todo.title.trim().is_empty() && todo.title.chars().count() <= 200
+        && !todo.title.trim().is_empty()
+        && todo.title.chars().count() <= 200
         && !todo.title.chars().any(char::is_control)
 }
 
 /** Updates the transient macOS menu-bar projection. Side effects: changes native menu UI only. */
 #[tauri::command]
-pub fn sync_menu_bar_todo(todo: Option<MenuBarTodoInput>, state: State<'_, MenuBarTodoState>) -> Result<(), String> {
-    if todo.as_ref().is_some_and(|value| !validate_menu_todo(value)) { return Err("invalid menu bar todo".into()); }
-    *state.current_id.lock().map_err(|_| "menu bar state unavailable")? = todo.as_ref().map(|value| value.id.clone());
+pub fn sync_menu_bar_todo(
+    todo: Option<MenuBarTodoInput>,
+    state: State<'_, MenuBarTodoState>,
+) -> Result<(), String> {
+    if todo
+        .as_ref()
+        .is_some_and(|value| !validate_menu_todo(value))
+    {
+        return Err("invalid menu bar todo".into());
+    }
+    *state
+        .current_id
+        .lock()
+        .map_err(|_| "menu bar state unavailable")? = todo.as_ref().map(|value| value.id.clone());
     #[cfg(target_os = "macos")]
     if let Some(todo) = todo {
         let short_title: String = todo.title.chars().take(6).collect();
-        state.tray.set_title(Some(format!("□ {} {}", todo.time, short_title))).map_err(|e| e.to_string())?;
-        state.detail_item.set_text(format!("{} {}", todo.time, todo.title)).map_err(|e| e.to_string())?;
-        state.complete_item.set_text("标记完成").map_err(|e| e.to_string())?;
-        state.complete_item.set_enabled(true).map_err(|e| e.to_string())?;
+        state
+            .tray
+            .set_title(Some(format!("□ {} {}", todo.time, short_title)))
+            .map_err(|e| e.to_string())?;
+        state
+            .detail_item
+            .set_text(format!("{} {}", todo.time, todo.title))
+            .map_err(|e| e.to_string())?;
+        state
+            .complete_item
+            .set_text("标记完成")
+            .map_err(|e| e.to_string())?;
+        state
+            .complete_item
+            .set_enabled(true)
+            .map_err(|e| e.to_string())?;
     } else {
         #[cfg(target_os = "macos")]
         {
-            state.tray.set_title(Some(ALL_DONE_SHORT_TITLE)).map_err(|e| e.to_string())?;
-            state.detail_item.set_text("今日待办已完成").map_err(|e| e.to_string())?;
-            state.complete_item.set_text("已完成").map_err(|e| e.to_string())?;
-            state.complete_item.set_enabled(false).map_err(|e| e.to_string())?;
+            state
+                .tray
+                .set_title(Some(ALL_DONE_SHORT_TITLE))
+                .map_err(|e| e.to_string())?;
+            state
+                .detail_item
+                .set_text("今日待办已完成")
+                .map_err(|e| e.to_string())?;
+            state
+                .complete_item
+                .set_text("已完成")
+                .map_err(|e| e.to_string())?;
+            state
+                .complete_item
+                .set_enabled(false)
+                .map_err(|e| e.to_string())?;
         }
     }
     Ok(())
@@ -126,26 +174,43 @@ pub fn install(app: &mut tauri::App) -> tauri::Result<()> {
     app.set_menu(menu)?;
     #[cfg(target_os = "macos")]
     let (tray, detail_item, complete_item) = {
-        let detail_item = MenuItem::with_id(app, "next-todo-detail", "正在加载今日日程…", false, None::<&str>)?;
-        let complete_item = MenuItem::with_id(app, COMPLETE_NEXT_TODO_ID, "标记完成", false, None::<&str>)?;
+        let detail_item = MenuItem::with_id(
+            app,
+            "next-todo-detail",
+            "正在加载今日日程…",
+            false,
+            None::<&str>,
+        )?;
+        let complete_item =
+            MenuItem::with_id(app, COMPLETE_NEXT_TODO_ID, "标记完成", false, None::<&str>)?;
         let tray_menu = Menu::with_items(app, &[&detail_item, &complete_item])?;
         let tray = TrayIconBuilder::with_id("next-todo")
-        .title("Life-OS")
-        .tooltip("Life-OS 下一待办")
-        .menu(&tray_menu)
-        .build(app)?;
+            .title("Life-OS")
+            .tooltip("Life-OS 下一待办")
+            .menu(&tray_menu)
+            .build(app)?;
         (tray, detail_item, complete_item)
     };
     #[cfg(target_os = "macos")]
-    app.manage(MenuBarTodoState { current_id: Mutex::new(None), tray, detail_item, complete_item });
+    app.manage(MenuBarTodoState {
+        current_id: Mutex::new(None),
+        tray,
+        detail_item,
+        complete_item,
+    });
     #[cfg(not(target_os = "macos"))]
-    app.manage(MenuBarTodoState { current_id: Mutex::new(None) });
+    app.manage(MenuBarTodoState {
+        current_id: Mutex::new(None),
+    });
     app.on_menu_event(move |app, event| {
         if event.id().as_ref() == COMPLETE_NEXT_TODO_ID {
             let state = app.state::<MenuBarTodoState>();
             let task_id = state.current_id.lock().ok().and_then(|value| value.clone());
             if let Some(task_id) = task_id {
-                if let Some(window) = app.get_webview_window("main") { let _ = window.show(); let _ = window.set_focus(); }
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                }
                 let _ = app.emit("menu-todo-complete", task_id);
             }
             return;
@@ -202,8 +267,16 @@ mod tests {
     #[test]
     fn exposes_the_next_todo_as_the_menu_bar_title() {
         assert_eq!(ALL_DONE_SHORT_TITLE, "✓ 今日完成");
-        assert!(validate_menu_todo(&MenuBarTodoInput { id: "task-1".into(), time: "14:00".into(), title: "项目周例会".into() }));
-        assert!(!validate_menu_todo(&MenuBarTodoInput { id: "../bad".into(), time: "29:00".into(), title: "".into() }));
+        assert!(validate_menu_todo(&MenuBarTodoInput {
+            id: "task-1".into(),
+            time: "14:00".into(),
+            title: "项目周例会".into()
+        }));
+        assert!(!validate_menu_todo(&MenuBarTodoInput {
+            id: "../bad".into(),
+            time: "29:00".into(),
+            title: "".into()
+        }));
     }
 
     #[cfg(desktop)]

@@ -5,8 +5,12 @@ use thiserror::Error;
 pub enum AppError {
     #[error("输入无效")]
     Validation,
+    #[error("{0}")]
+    ValidationMessage(String),
     #[error("数据发生冲突")]
     Conflict,
+    #[error("{0}")]
+    ConflictMessage(String),
     #[error("本地存储暂时不可用")]
     Storage(#[from] rusqlite::Error),
     #[error("外部服务暂时不可用")]
@@ -25,8 +29,8 @@ pub struct ErrorResponse {
 impl From<AppError> for ErrorResponse {
     fn from(value: AppError) -> Self {
         let code = match value {
-            AppError::Validation => "VALIDATION_ERROR",
-            AppError::Conflict => "CONFLICT",
+            AppError::Validation | AppError::ValidationMessage(_) => "VALIDATION_ERROR",
+            AppError::Conflict | AppError::ConflictMessage(_) => "CONFLICT",
             AppError::Storage(_) => "STORAGE_ERROR",
             AppError::ExternalService => "EXTERNAL_SERVICE_ERROR",
             AppError::Backup => "BACKUP_ERROR",
