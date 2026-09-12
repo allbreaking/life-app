@@ -2,7 +2,7 @@
 
 ## 能力
 
-Life-OS macOS 应用随包提供 `life-os-mcp` stdio server。当前只暴露 `add_trade_watch`，用于向投资观察列表添加沪深北 A 股标的；它不会创建持仓或执行交易。
+Life-OS macOS 应用随包提供 `life-os-mcp` stdio server。当前只暴露 `add_trade_watch`，用于向投资观察列表添加沪深北 A 股或港股标的；它不会创建持仓或执行交易。
 
 ## 前置条件
 

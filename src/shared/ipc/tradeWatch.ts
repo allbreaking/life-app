@@ -6,7 +6,7 @@ import { domainResourceError, hasTauriRuntime } from './domainResource';
 const ratingSchema = z.number().int().min(0).max(5).optional();
 const tradeWatchObjectSchema = z.object({
   id: z.string().uuid(),
-  code: z.string().regex(/^\d{6}$/),
+  code: z.string().regex(/^\d{5,6}$/),
   name: z.string().trim().min(1).max(100),
   optimisticTarget: z.number().positive().finite(),
   target: z.number().positive().finite(),

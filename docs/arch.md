@@ -43,4 +43,4 @@ localStorage 持久化
 
 ## 后续桌面化
 
-在 Web MVP 验证通过后，可用 Tauri 包装并把存储适配器替换为 SQLite；领域动作与状态模型保持不变。原生菜单栏、通知与行情轮询放在 Rust 侧，以显式 capability 暴露给前端。
+在 Web MVP 验证通过后，可用 Tauri 包装并把存储适配器替换为 SQLite；领域动作与状态模型保持不变。原生菜单栏、通知与行情拉取放在 Rust 侧，以显式 capability 暴露给前端。

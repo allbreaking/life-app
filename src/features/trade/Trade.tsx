@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { z } from 'zod';
 import { useDomainResource } from '../../shared/ipc/useDomainResource';
-import { chinaMarketClock, fetchMarketQuotes, isChinaMarketSession } from '../../shared/ipc/marketQuote';
+import { fetchMarketQuotes } from '../../shared/ipc/marketQuote';
 import { addTradeWatch, subscribeTradeWatchAdded } from '../../shared/ipc/tradeWatch';
 import { centralTargetDistanceFromCurrentPercent, filterWatchlist, halfPositionReductionPrice, isValidTargetPrices, isValidTargetRange, normalizeWatch, paginateWatchlist, parseOptionalWatchRating, parseWatchTags, priceAlert, realizedProfitPercent, safetyDistancePercent, searchWatchlist, searchWatchlistByCode, sortWatchlistByRating, sortWatchlistNewestFirst, targetDistancePercent, unrealizedProfitPercent, type WatchFilter, type WatchRatingKey } from './tradeModel';
 type WatchRatings = Partial<Record<WatchRatingKey, number>>;
@@ -39,8 +39,8 @@ function parseWatchRatings(data: FormData): WatchRatings | null {
 
 /** Specs: trade-watch-target-range, trade-watch-inline-management, trade-watch-filter-pagination, and trade-watch-tags. Side effects: persists domain resources through typed IPC, requests fixed-host Sina A-share snapshots, and updates transient filter/page state. */
 export function Trade() {
-  const [watchlist, setWatchlist] = useDomainResource('trade.watchlist', watchSchema, initialWatch); const [positions, setPositions] = useDomainResource('trade.positions', positionSchema, (import.meta.env.PROD ? [] : [{ id: 'pos1', watchlistId: 'w2', price: 38.2 }]) as Position[]); const [reviews, setReviews] = useDomainResource('trade.reviews', reviewSchema, (import.meta.env.PROD ? [] : [{ date: '2026-07-25', content: '大盘震荡，茅台触及安全价，暂不加仓观察量能' }]) as Review[]); const [sop, setSop] = useDomainResource('trade.sop', sopSchema, initialSop); const [sopDraft, setSopDraft] = useState(initialSop); const [editingSop, setEditingSop] = useState(false); const [positionTab, setPositionTab] = useState<'active' | 'closed'>('active'); const [watchFilter, setWatchFilter] = useState<WatchFilter>('all'); const [watchTagFilter, setWatchTagFilter] = useState(''); const [watchQuery, setWatchQuery] = useState(''); const [watchRatingSortKey, setWatchRatingSortKey] = useState<WatchRatingKey | ''>(''); const [watchRatingSortDirection, setWatchRatingSortDirection] = useState<'asc' | 'desc'>('desc'); const [watchPageNumber, setWatchPageNumber] = useState(1); const [loadingQuote, setLoadingQuote] = useState(false); const [message, setMessage] = useState('');
-  const watchCodes = watchlist.filter((item) => /^\d{6}$/.test(item.code)).map((item) => item.code).join(',');
+  const [watchlist, setWatchlist] = useDomainResource('trade.watchlist', watchSchema, initialWatch); const [positions, setPositions] = useDomainResource('trade.positions', positionSchema, (import.meta.env.PROD ? [] : [{ id: 'pos1', watchlistId: 'w2', price: 38.2 }]) as Position[]); const [reviews, setReviews] = useDomainResource('trade.reviews', reviewSchema, (import.meta.env.PROD ? [] : [{ date: '2026-07-25', content: '大盘震荡，茅台触及安全价，暂不加仓观察量能' }]) as Review[]); const [sop, setSop] = useDomainResource('trade.sop', sopSchema, initialSop); const [sopDraft, setSopDraft] = useState(initialSop); const [editingSop, setEditingSop] = useState(false); const [positionTab, setPositionTab] = useState<'active' | 'closed'>('active'); const [watchFilter, setWatchFilter] = useState<WatchFilter>('all'); const [watchTagFilter, setWatchTagFilter] = useState(''); const [watchQuery, setWatchQuery] = useState(''); const [watchRatingSortKey, setWatchRatingSortKey] = useState<WatchRatingKey | ''>(''); const [watchRatingSortDirection, setWatchRatingSortDirection] = useState<'asc' | 'desc'>('desc'); const [watchPageNumber, setWatchPageNumber] = useState(1); const [loadingQuote, setLoadingQuote] = useState(false); const [refreshing, setRefreshing] = useState(false); const [message, setMessage] = useState('');
+  const watchCodes = watchlist.filter((item) => /^\d{5,6}$/.test(item.code)).map((item) => item.code).join(',');
   useEffect(() => {
     let disposed = false;
     let unlisten: (() => void) | undefined;
@@ -51,29 +51,19 @@ export function Trade() {
     }).then((stop) => { if (disposed) stop(); else unlisten = stop; });
     return () => { disposed = true; unlisten?.(); };
   }, [setWatchlist]);
-  useEffect(() => {
-    if (!watchCodes) return;
-    let closedDate = '';
-    let staleResponses = 0;
-    const refresh = async () => {
-      const now = new Date();
-      if (!isChinaMarketSession(now)) return;
-      const today = chinaMarketClock(now).date;
-      if (closedDate === today) return;
-      try {
-        const quotes = await fetchMarketQuotes(watchCodes.split(','));
-        const currentQuotes = new Map(quotes.filter((quote) => quote.quoteAt.startsWith(today)).map((quote) => [quote.code, quote]));
-        if (!currentQuotes.size) { staleResponses += 1; if (staleResponses >= 3) closedDate = today; return setMessage(`新浪返回的是非当日行情，已保留最后成功价格${closedDate ? '；今日轮询已暂停' : ''}`); }
-        staleResponses = 0;
-        setWatchlist((items) => items.map((item) => { const quote = currentQuotes.get(item.code); return quote ? { ...item, current: quote.price, quoteAt: quote.quoteAt } : item; }));
-        setMessage(`新浪行情已更新 · ${new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`);
-      } catch (error) { setMessage(error instanceof Error ? `${error.message}，已保留最后成功价格` : '行情刷新失败，已保留最后成功价格'); }
-    };
-    void refresh();
-    const timer = window.setInterval(() => void refresh(), 60_000);
-    return () => window.clearInterval(timer);
-  }, [watchCodes, setWatchlist]);
-  const addWatch = async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; const data = new FormData(form); const code = String(data.get('code') ?? '').trim(); const name = String(data.get('name') ?? '').trim(); const tags = parseWatchTags(String(data.get('tags') ?? '')); const ratings = parseWatchRatings(data); const optimisticTarget = Number(data.get('optimisticTarget')); const target = Number(data.get('target')); const pessimisticTarget = Number(data.get('pessimisticTarget')); if (tags === null) return setMessage('标签最多 10 个，每个最多 20 个字符'); if (ratings === null) return setMessage('四项评分均应为 0–5 的整数或留空'); if (!/^\d{6}$/.test(code) || !name || !isValidTargetPrices(optimisticTarget, target, pessimisticTarget)) return setMessage('请填写六位 A 股代码、名称和有效价格，且满足乐观目标价 ≥ 中枢目标价 ≥ 悲观目标价 > 0'); if (watchlist.some((item) => item.code === code)) return setMessage('该代码已在观察列表'); setLoadingQuote(true); setMessage('正在读取新浪行情…'); try { const watch = await addTradeWatch({ requestId: crypto.randomUUID(), code, name, optimisticTarget, target, pessimisticTarget, tags, ...ratings }); setWatchlist((items) => items.some((item) => item.id === watch.id) ? items : [...items, watch]); form.reset(); setMessage(`已按新浪行情 ¥${watch.current.toFixed(2)} 加入观察列表`); } catch (error) { setMessage(error instanceof Error ? error.message : '新浪行情暂时不可用'); } finally { setLoadingQuote(false); } };
+  const refreshQuotes = async () => {
+    if (!watchCodes) return setMessage('观察列表为空，无法刷新');
+    setRefreshing(true);
+    setMessage('正在读取新浪行情…');
+    try {
+      const quotes = await fetchMarketQuotes(watchCodes.split(','));
+      const quoteMap = new Map(quotes.map((quote) => [quote.code, quote]));
+      if (!quoteMap.size) return setMessage('未获取到有效行情，已保留原价');
+      setWatchlist((items) => items.map((item) => { const quote = quoteMap.get(item.code); return quote ? { ...item, current: quote.price, quoteAt: quote.quoteAt } : item; }));
+      setMessage(`已刷新 ${quoteMap.size} 个标的行情 · ${new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`);
+    } catch (error) { setMessage(error instanceof Error ? `${error.message}，已保留原价` : '行情刷新失败，已保留原价'); } finally { setRefreshing(false); }
+  };
+  const addWatch = async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; const data = new FormData(form); const code = String(data.get('code') ?? '').trim(); const name = String(data.get('name') ?? '').trim(); const tags = parseWatchTags(String(data.get('tags') ?? '')); const ratings = parseWatchRatings(data); const optimisticTarget = Number(data.get('optimisticTarget')); const target = Number(data.get('target')); const pessimisticTarget = Number(data.get('pessimisticTarget')); if (tags === null) return setMessage('标签最多 10 个，每个最多 20 个字符'); if (ratings === null) return setMessage('四项评分均应为 0–5 的整数或留空'); if (!/^\d{5,6}$/.test(code) || !name || !isValidTargetPrices(optimisticTarget, target, pessimisticTarget)) return setMessage('请填写六位 A 股或五位港股代码、名称和有效价格，且满足乐观目标价 ≥ 中枢目标价 ≥ 悲观目标价 > 0'); if (watchlist.some((item) => item.code === code)) return setMessage('该代码已在观察列表'); setLoadingQuote(true); setMessage('正在读取新浪行情…'); try { const watch = await addTradeWatch({ requestId: crypto.randomUUID(), code, name, optimisticTarget, target, pessimisticTarget, tags, ...ratings }); setWatchlist((items) => items.some((item) => item.id === watch.id) ? items : [...items, watch]); form.reset(); setMessage(`已按新浪行情 ¥${watch.current.toFixed(2)} 加入观察列表`); } catch (error) { setMessage(error instanceof Error ? error.message : '新浪行情暂时不可用'); } finally { setLoadingQuote(false); } };
   const addPosition = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; const data = new FormData(form); const watchlistId = String(data.get('watchlistId')); const price = Number(data.get('price')); if (!watchlist.some((item) => item.id === watchlistId) || !Number.isFinite(price) || price <= 0) return setMessage('持仓必须选择观察列表标的并填写有效建仓价'); setPositions((items) => [...items, { id: crypto.randomUUID(), watchlistId, price }]); form.reset(); setMessage('持仓已加入本次运行状态'); };
   const saveReview = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; const content = String(new FormData(form).get('content') ?? '').trim(); if (!content || content.length > 1000) return setMessage('复盘内容应为 1–1000 个字符'); const date = new Date().toLocaleDateString('sv-SE'); setReviews((items) => [{ date, content }, ...items.filter((item) => item.date !== date)]); form.reset(); setMessage('今日复盘已按日期更新（运行态）'); };
   const startSopEdit = () => { setSopDraft(sop); setEditingSop(true); setMessage(''); };
@@ -88,7 +78,7 @@ export function Trade() {
     const tags = parseWatchTags(draft.tags);
     if (tags === null) { const error = '标签最多 10 个，每个最多 20 个字符'; setMessage(error); return error; }
     if (watchRatingFields.some(({ key }) => draft[key] !== undefined && (!Number.isInteger(draft[key]) || draft[key]! < 0 || draft[key]! > 5))) { const error = '四项评分均应为 0–5 的整数或留空'; setMessage(error); return error; }
-    if (!/^\d{6}$/.test(draft.code) || !draft.name || draft.name.length > 100 || !isValidTargetRange(draft.optimisticTarget, draft.target, draft.pessimisticTarget, draft.safety)) { const error = '请填写六位 A 股代码、1–100 字名称和有效价格，且满足乐观目标价 ≥ 中枢目标价 ≥ 悲观目标价，安全价低于中枢目标价'; setMessage(error); return error; }
+    if (!/^\d{5,6}$/.test(draft.code) || !draft.name || draft.name.length > 100 || !isValidTargetRange(draft.optimisticTarget, draft.target, draft.pessimisticTarget, draft.safety)) { const error = '请填写六位 A 股或五位港股代码、1–100 字名称和有效价格，且满足乐观目标价 ≥ 中枢目标价 ≥ 悲观目标价，安全价低于中枢目标价'; setMessage(error); return error; }
     if (watchlist.some((item) => item.id !== watchId && item.code === draft.code)) { const error = '该代码已在观察列表'; setMessage(error); return error; }
     try {
       let quote: { price: number; quoteAt: string } | undefined;
@@ -131,9 +121,9 @@ export function Trade() {
     </section>
     {message && <div role="status" className="status-message">{message}</div>}
     <section className="card trade-card">
-      <h2><span>观察列表</span><span className="tag">新浪行情 · 60 秒刷新 · 不提供建议</span></h2>
+      <h2><span>观察列表</span><span className="tag">新浪行情 · 手动刷新 · 不提供建议</span><button type="button" className="command-button" onClick={() => void refreshQuotes()} disabled={refreshing} aria-label="刷新观察列表行情">{refreshing ? '刷新中…' : '刷新行情'}</button></h2>
       <form className="compact-form watch-add-form" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10, alignItems: 'end' }} onSubmit={addWatch}>
-        <WatchAddField label="股票代码"><input name="code" placeholder="六位 A 股代码" style={{ width: '100%' }} required /></WatchAddField>
+        <WatchAddField label="股票代码"><input name="code" placeholder="六位A股 / 五位港股" style={{ width: '100%' }} required /></WatchAddField>
         <WatchAddField label="股票名称"><input name="name" placeholder="名称" style={{ width: '100%' }} required /></WatchAddField>
         <WatchAddField label="标签" span={2}><input name="tags" placeholder="多个标签用逗号分隔" aria-label="观察标的标签" style={{ width: '100%' }} /></WatchAddField>
         <span style={{ display: 'grid', gridColumn: '1 / -1', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10 }}>
@@ -264,7 +254,7 @@ function WatchRow({ item, onSave, onDelete }: { item: Watch; onSave: (watchId: s
   const setRating = (key: WatchRatingKey, value: number | undefined) => setDraft((current) => { const next = { ...current }; if (value === undefined) delete next[key]; else next[key] = value; return next; });
   const save = async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); setError(''); setSaving(true); try { const reason = await onSave(item.id, { ...draft, code: draft.code.trim(), name: draft.name.trim() }); if (reason) setError(reason); else setEditing(false); } finally { setSaving(false); } };
   if (editing) return <form className="watch-row watch-row-editor" style={{ background: '#f8fafc' }} noValidate onSubmit={(event) => void save(event)} onChange={() => setError('')} onKeyDown={(event) => { if (event.key === 'Escape' && !saving) cancel(); }}>
-    <span className="watch-identity-editor"><label className="sr-only" htmlFor={`watch-code-${item.id}`}>编辑 {item.name} 代码</label><input id={`watch-code-${item.id}`} value={draft.code} onChange={(event) => setDraft((current) => ({ ...current, code: event.target.value }))} inputMode="numeric" pattern="\d{6}" maxLength={6} autoFocus required /><label className="sr-only" htmlFor={`watch-name-${item.id}`}>编辑 {item.name} 名称</label><input id={`watch-name-${item.id}`} value={draft.name} onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))} maxLength={100} required /><label className="sr-only" htmlFor={`watch-tags-${item.id}`}>编辑 {item.name} 标签</label><input id={`watch-tags-${item.id}`} style={{ gridColumn: '1 / -1' }} value={draft.tags} onChange={(event) => setDraft((current) => ({ ...current, tags: event.target.value }))} placeholder="标签（逗号分隔）" /></span>
+    <span className="watch-identity-editor"><label className="sr-only" htmlFor={`watch-code-${item.id}`}>编辑 {item.name} 代码</label><input id={`watch-code-${item.id}`} value={draft.code} onChange={(event) => setDraft((current) => ({ ...current, code: event.target.value }))} inputMode="numeric" pattern="\d{5,6}" maxLength={6} autoFocus required /><label className="sr-only" htmlFor={`watch-name-${item.id}`}>编辑 {item.name} 名称</label><input id={`watch-name-${item.id}`} value={draft.name} onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))} maxLength={100} required /><label className="sr-only" htmlFor={`watch-tags-${item.id}`}>编辑 {item.name} 标签</label><input id={`watch-tags-${item.id}`} style={{ gridColumn: '1 / -1' }} value={draft.tags} onChange={(event) => setDraft((current) => ({ ...current, tags: event.target.value }))} placeholder="标签（逗号分隔）" /></span>
     <label><span className="sr-only">编辑 {item.name} 乐观目标价</span><input type="number" min="0.01" step="0.01" value={draft.optimisticTarget} onChange={(event) => setPrice('optimisticTarget', event.target.value)} required /></label>
     <label><span className="sr-only">编辑 {item.name} 中枢目标价</span><input type="number" min="0.01" step="0.01" value={draft.target} onChange={(event) => setPrice('target', event.target.value)} required /></label>
     <label><span className="sr-only">编辑 {item.name} 悲观目标价</span><input type="number" min="0.01" step="0.01" value={draft.pessimisticTarget} onChange={(event) => setPrice('pessimisticTarget', event.target.value)} required /></label>

@@ -298,7 +298,7 @@ test('keeps social records factual without relationship scoring', () => {
 test('only offers watchlist instruments when creating a position', () => {
   render(<App />);
   fireEvent.click(screen.getByRole('button', { name: '投资' }));
-  expect(screen.getByText(/新浪行情 · 60 秒刷新/)).toBeInTheDocument();
+  expect(screen.getByText(/新浪行情 · 手动刷新/)).toBeInTheDocument();
   expect(screen.queryByPlaceholderText('现价')).not.toBeInTheDocument();
   expect(screen.queryByPlaceholderText('止损价')).not.toBeInTheDocument();
   expect(screen.getByRole('spinbutton', { name: '乐观目标价' })).toBeInTheDocument();
@@ -501,7 +501,7 @@ test('keeps invalid watch edits in place and blocks deleting referenced items', 
   fireEvent.change(screen.getByRole('textbox', { name: '编辑 贵州茅台 标签' }), { target: { value: '消费，核心资产' } });
   fireEvent.change(screen.getByRole('textbox', { name: '编辑 贵州茅台 代码' }), { target: { value: '123' } });
   await act(async () => fireEvent.click(screen.getByRole('button', { name: '保存 贵州茅台 观察标的' })));
-  expect(screen.getByRole('alert')).toHaveTextContent('六位 A 股代码');
+  expect(screen.getByRole('alert')).toHaveTextContent('六位 A 股或五位港股代码');
   expect(screen.getByRole('alert').closest('.watch-row')).toHaveClass('watch-row-editor');
 
   fireEvent.change(screen.getByRole('textbox', { name: '编辑 贵州茅台 代码' }), { target: { value: '600519' } });

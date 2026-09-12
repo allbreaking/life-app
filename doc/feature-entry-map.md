@@ -84,8 +84,8 @@ src-tauri/src/main.rs
 | 人物卡 | 左侧“社交” | `src/features/network/Network.tsx::Network` | `network.people` | 组件内字符串校验 | `src/app/App.test.tsx` |
 | 投资 SOP | 投资页顶部卡片 | `src/features/trade/Trade.tsx::Trade` | `trade.sop` | trim、1–500 字 | `src/app/App.test.tsx` |
 | 观察列表 | 投资页“观察列表” | `Trade`、`WatchRow`、`WatchRatings` | `trade.watchlist` + 新浪 HTTP；搜索/评分排序为瞬时状态 | `normalizeWatch`、`parseWatchTags`、`parseOptionalWatchRating`、`isValidTargetRange`、`priceAlert`、`searchWatchlist`、`filterWatchlist`、`sortWatchlistByRating`、`paginateWatchlist` | `src/features/trade/tradeModel.test.ts`、`src/app/App.test.tsx` |
-| AI Agent 添加观察标的 | MCP `add_trade_watch` | `life-os-mcp` → Unix socket bridge → `TradeWatchService` | 原子追加 `trade.watchlist` + 幂等收据 + 新浪 HTTP | 六位代码、名称、三档目标价、标签、四维评分、request ID | Rust MCP/SQLite tests、前端 IPC/组件测试 |
-| 行情轮询 | 进入投资页后自动 | `Trade` 的行情 `useEffect` | `fetch_market_quotes` + `trade.watchlist` | `chinaMarketClock`、`isChinaMarketSession` | `src/shared/ipc/marketQuote.test.ts`、Rust tests |
+| AI Agent 添加观察标的 | MCP `add_trade_watch` | `life-os-mcp` → Unix socket bridge → `TradeWatchService` | 原子追加 `trade.watchlist` + 幂等收据 + 新浪 HTTP | 五位港股或六位 A 股代码、名称、三档目标价、标签、四维评分、request ID | Rust MCP/SQLite tests、前端 IPC/组件测试 |
+| 行情刷新 | 投资页「刷新行情」按钮手动触发 | `Trade` 的 `refreshQuotes` | `fetch_market_quotes` + `trade.watchlist` | 五/六位代码校验、停牌/无效单只跳过 | `src/shared/ipc/marketQuote.test.ts`、Rust tests |
 | 持仓管理 | 投资页“持仓管理” | `WatchSelect`、`PositionRow`、`ClosedPositionRow` | `trade.positions`；下拉代码搜索为瞬时状态 | 代码搜索、五个价格/盈亏纯函数、稳定 ID 删除 | `src/features/trade/tradeModel.test.ts`、`src/app/App.test.tsx` |
 | 每日复盘 | 投资页“每日复盘” | `Trade`、`ReviewRow` | `trade.reviews` | 本地日期唯一 | `src/app/App.test.tsx` |
 | 学习领域 | 左侧“学习” | `src/features/learning/Learning.tsx::Learning` | `learning.domains` | 完成数/总数派生 | `src/app/App.test.tsx` |
@@ -172,8 +172,8 @@ feature 调用 setValue
 | 浮动/已实现盈亏 | `unrealizedProfitPercent` / `realizedProfitPercent` | cost/current(close) → percent | 非有限或非正价格返回 NaN |
 | 目标/安全距离 | `targetDistancePercent` / `safetyDistancePercent` | cost + threshold → percent | 安全距离方向为 `cost/safety-1` |
 | 减半仓价 | `halfPositionReductionPrice` | cost/safety → price/null | 仅 cost>safety，公式 `2C-S` |
-| 北京交易时段 | `marketQuote.ts::chinaMarketClock` / `isChinaMarketSession` | Date → 时钟/session | 固定 Asia/Shanghai；边界包含 11:30、15:00 |
-| 行情代码映射/解析 | `src-tauri/src/market_quote.rs` | 六位代码/GBK响应 → quote | ≤50，≤64 KiB，固定 HTTPS 主机，校验字段/价格/日期时间 |
+| 北京时间时钟（遗留，已不再用于行情调度） | `marketQuote.ts::chinaMarketClock` / `isChinaMarketSession` | Date → 时钟/session | 固定 Asia/Shanghai；边界包含 11:30、15:00 |
+| 行情代码映射/解析 | `src-tauri/src/market_quote.rs` | 五位港股或六位 A 股代码/GBK响应 → quote | ≤50，≤64 KiB，固定 HTTPS 主机，按市场分流校验字段/价格/日期时间 |
 | 通知去重 | `src-tauri/src/notification.rs::NotificationService::deliver` | entity/type/time → status | 成功三元组唯一；失败可重试 |
 | 快照校验恢复 | `src-tauri/src/backup.rs::BackupService::restore` | backup ID → live DB | 拒绝穿越/符号链接；完整性/外键/schema；先建回滚点 |
 
@@ -201,19 +201,19 @@ App 加载 schedule.scheduled
 ### 6.2 新浪行情
 
 ```text
-新增/换股/交易时段轮询
+新增/换股/手动刷新
   → fetchMarketQuotes(codes)
-  → Zod：1..50 个不重复六位代码
+  → Zod：1..50 个不重复五位港股或六位 A 股代码
   → invoke('fetch_market_quotes')
   → MarketQuoteService::fetch
-      → 代码映射 sh/sz/bj
+      → 代码映射 sh/sz/bj（六位）/ hk（五位）
       → reqwest 固定 hq.sinajs.cn，只读 GET
-      → 限制响应大小并解析价格/行情时间
+      → 限制响应大小并按市场分流解析价格/行情时间
   → 前端 Zod 再校验
   → 新增或替换 trade.watchlist
 ```
 
-排查顺序：是否桌面 runtime → 是否交易时段（自动刷新）→ 代码格式 → Rust 网络/证书 → 新浪响应是否当日 → `quoteAt` Zod 格式 → watchlist 保存。
+排查顺序：是否桌面 runtime → 代码格式（五/六位）→ Rust 网络/证书 → 新浪响应字段是否按市场正确 → `quoteAt` Zod 格式 → watchlist 保存。
 
 ### 6.3 数据备份与恢复
 
@@ -328,7 +328,7 @@ App
 | 预算颜色异常 | `budgetProgress` | 设备年月日/时分、budget=0 | 时间进度按本地当前月实时计算 |
 | 食物提前/延后一天告警 | `foodExpiryStatus` | 输入日期、设备本地时区 | 算法用本地中午，避免 UTC 漂移 |
 | 股票新增按钮一直失败 | `Trade::addWatch` | `fetchMarketQuotes`、Rust adapter | 浏览器版不可用；必须先成功取价 |
-| 股票不自动刷新 | `Trade` 行情 effect | `isChinaMarketSession`、quoteAt 日期 | 非交易时段不请求；三次陈旧暂停当天 |
+| 股票点刷新没更新 | `Trade::refreshQuotes` | 代码是否五/六位、Rust adapter、停牌 | 手动触发；停牌/无效单只跳过并保留原价 |
 | 换股后价格没变 | `Trade::updateWatch` | draft.code 是否真的变化、行情错误 | 代码未变沿用旧价；换股失败不保存 |
 | 观察标的删不掉 | `Trade::deleteWatch` | `trade.positions` 含当前或已清仓引用 | 引用保护是预期，不级联删除 |
 | 盈亏/距离/减仓价异常 | `tradeModel.ts` | 成本、现价、中枢价、安全价 | 确认公式方向；非法价格返回 NaN/null |

@@ -138,14 +138,14 @@ fn tool_definition() -> Value {
     json!({
         "name": TOOL_NAME,
         "title": "添加投资观察标的",
-        "description": "将一个经过校验的沪深北 A 股标的加入正在运行的 Life-OS 投资观察列表；只观察，不创建持仓或交易。",
+        "description": "将一个经过校验的沪深北 A 股或港股标的加入正在运行的 Life-OS 投资观察列表；只观察，不创建持仓或交易。",
         "inputSchema": {
             "type": "object",
             "additionalProperties": false,
             "required": ["requestId", "code", "name", "optimisticTarget", "target", "pessimisticTarget"],
             "properties": {
                 "requestId": { "type": "string", "format": "uuid", "description": "重试时复用的幂等 UUID" },
-                "code": { "type": "string", "pattern": "^[0-9]{6}$" },
+                "code": { "type": "string", "pattern": "^[0-9]{5,6}$" },
                 "name": { "type": "string", "minLength": 1, "maxLength": 100 },
                 "optimisticTarget": { "type": "number", "exclusiveMinimum": 0 },
                 "target": { "type": "number", "exclusiveMinimum": 0 },

@@ -190,8 +190,8 @@ fn validate(mut input: AddTradeWatchInput) -> Result<AddTradeWatchInput, AppErro
     }
     input.code = input.code.trim().to_owned();
     input.name = input.name.trim().to_owned();
-    if input.code.len() != 6 || !input.code.bytes().all(|byte| byte.is_ascii_digit()) {
-        return Err(AppError::ValidationMessage("股票代码必须是六位数字".into()));
+    if (input.code.len() != 5 && input.code.len() != 6) || !input.code.bytes().all(|byte| byte.is_ascii_digit()) {
+        return Err(AppError::ValidationMessage("股票代码须为五位港股或六位 A 股".into()));
     }
     if input.name.is_empty() || input.name.chars().count() > 100 {
         return Err(AppError::ValidationMessage(

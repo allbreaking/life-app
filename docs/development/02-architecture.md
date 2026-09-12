@@ -53,7 +53,7 @@ src-tauri/
 - 清仓不在两个资源间搬运数据；而是在原 `trade.positions` 实体上同时写入 `closePrice`、`profitPercent` 和 `closedAt`。两个 Tab 依据 `closedAt` 派生过滤，确保清仓状态一次替换即原子生效。
 - 当前持仓删除与清仓是两个独立命令：删除直接按 ID 过滤 `trade.positions`，清仓则保留并封存原实体。
 - 每日复盘以 `date` 作为稳定身份；行内编辑草稿仅存于对应条目组件，保存或删除后由父组件一次替换 `trade.reviews` 集合。
-- `MarketQuoteService` 位于 Rust 侧，通过固定新浪财经 adapter 批量查询 A 股快照；命令只接收数量受限的六位代码数组。React 仅负责按北京时间交易窗口调度，Rust 再次校验代码、响应大小、字段数量、有限正价格与行情时间。
+- `MarketQuoteService` 位于 Rust 侧，通过固定新浪财经 adapter 批量查询 A 股与港股快照；命令只接收数量受限的五位港股或六位 A 股代码数组。React 仅在用户点击「刷新行情」时触发，Rust 按市场分流校验代码、响应大小、字段数量、有限正价格与行情时间，单只标的无效时跳过该只而不拖垮整批。
 
 ## 副作用边界
 
