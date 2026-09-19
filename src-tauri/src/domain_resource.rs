@@ -12,12 +12,6 @@ const RESOURCES: &[(&str, &str, &str)] = &[
     ),
     ("dashboard.dailyOutput", "dashboard", "dailyOutput"),
     ("dashboard.dailyTasks", "dashboard", "dailyTasks"),
-    ("work.tasks", "work", "tasks"),
-    ("work.focusIds", "work", "focusIds"),
-    ("work.eodSubmitted", "work", "eodSubmitted"),
-    ("schedule.pool", "schedule", "pool"),
-    ("schedule.scheduled", "schedule", "scheduled"),
-    ("schedule.lifeSchedules", "schedule", "lifeSchedules"),
     ("finance.budgetCents", "finance", "budgetCents"),
     ("finance.spentCents", "finance", "spentCents"),
     ("finance.pending", "finance", "pending"),
@@ -34,7 +28,6 @@ const RESOURCES: &[(&str, &str, &str)] = &[
     ("trade.positions", "trade", "positions"),
     ("trade.reviews", "trade", "reviews"),
     ("trade.sop", "trade", "sop"),
-    ("learning.domains", "learning", "domains"),
 ];
 const MAX_VALUE_BYTES: usize = 256 * 1024;
 
@@ -283,7 +276,7 @@ mod tests {
         ));
         assert!(matches!(
             service.replace(
-                "work.tasks",
+                "finance.budgetCents",
                 &Value::String("x".repeat(MAX_VALUE_BYTES)),
                 "r1"
             ),

@@ -1,5 +1,7 @@
 import { z } from 'zod';
-import { todayKey } from '../schedule/scheduleState';
+
+/** Side effects: reads the local system date. */
+export const todayKey = () => new Date().toLocaleDateString('sv-SE');
 
 /** 每日待办条目：标题 + 完成日期。仅当 completedOn 等于当天日期时视为已完成，隔天自动刷新为未完成。 */
 export type DailyTodoItem = { id: string; title: string; completedOn: string | null };

@@ -1,13 +1,9 @@
-import type { Dispatch, SetStateAction } from 'react';
-import { todayScheduledTasks, type ScheduledTask } from '../schedule/scheduleState';
 import { useDomainResource } from '../../shared/ipc/useDomainResource';
 import { dailyTodosSchema, initialDailyOutput, initialDailyTasks } from './dailyTodos';
 import { DailyTodoCard } from './DailyTodoCard';
 
-/** Side effects: invokes the provided scheduled-task setter and persists the two daily todo lists through typed IPC. */
-export function Dashboard({ scheduled, setScheduled }: { scheduled: ScheduledTask[]; setScheduled: Dispatch<SetStateAction<ScheduledTask[]>> }) {
-  const todos = todayScheduledTasks(scheduled);
-  const toggleTodo = (id: string) => setScheduled((items) => items.map((item) => item.id === id ? { ...item, completed: !item.completed } : item));
+/** Side effects: persists the two daily todo lists through typed IPC. */
+export function Dashboard() {
   const [dailyOutput, setDailyOutput] = useDomainResource('dashboard.dailyOutput', dailyTodosSchema, initialDailyOutput);
   const [dailyTasks, setDailyTasks] = useDomainResource('dashboard.dailyTasks', dailyTodosSchema, initialDailyTasks);
 
@@ -22,7 +18,7 @@ export function Dashboard({ scheduled, setScheduled }: { scheduled: ScheduledTas
     <div className="dashboard-view">
       <section className="card">
         <h2><span>▣ 今日待办</span></h2>
-        {todos.length ? todos.map((todo) => <button className={todo.completed ? 'todo-row done' : 'todo-row'} key={todo.id} onClick={() => toggleTodo(todo.id)}><span className="todo-time">{todo.time}</span><span className="todo-check" aria-hidden="true">✓</span><span className="todo-title">{todo.title}</span></button>) : <p className="small">今日暂无待办</p>}
+        <p className="small">今日暂无待办</p>
       </section>
       {dailyCards}
     </div>
@@ -36,25 +32,10 @@ export function Dashboard({ scheduled, setScheduled }: { scheduled: ScheduledTas
         <p className="small">原则提示：倒过来想，总是倒过来想。</p>
       </section>
 
-      <div className="grid grid-2">
-        <section className="card">
-          <h2><span>▣ 今日待办</span><span className="tag">默认展示3个未完成项</span></h2>
-          {todos.map((todo) => (
-            <button className={todo.completed ? 'todo-row done' : 'todo-row'} key={todo.id} onClick={() => toggleTodo(todo.id)}>
-              <span className="todo-time">{todo.time}</span>
-              <span className="todo-check" aria-hidden="true">✓</span>
-              <span className="todo-title">{todo.title}</span>
-            </button>
-          ))}
-        </section>
-
-        <section className="card">
-          <h2>本周投入统计</h2>
-          <DataRow label="加班累计"><span className="mono">6.5h / 15h</span></DataRow>
-          <DataRow label="学习任务完成"><span className="mono">4 个</span></DataRow>
-          <DataRow label="学习时长"><span className="mono">3.2h</span></DataRow>
-        </section>
-      </div>
+      <section className="card">
+        <h2><span>▣ 今日待办</span></h2>
+        <p className="small">今日暂无待办</p>
+      </section>
 
       {dailyCards}
 

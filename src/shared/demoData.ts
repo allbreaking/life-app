@@ -7,12 +7,6 @@ const productionDefaults: Partial<Record<DomainResource, unknown>> = {
   'dashboard.completedTodoIndexes': [],
   'dashboard.dailyOutput': [],
   'dashboard.dailyTasks': [],
-  'work.tasks': { Q1: [], Q2: [], Q3: [], Q4: [] },
-  'work.focusIds': [],
-  'work.eodSubmitted': false,
-  'schedule.pool': [],
-  'schedule.scheduled': [],
-  'schedule.lifeSchedules': [],
   'finance.budgetCents': 0,
   'finance.spentCents': 0,
   'finance.pending': [],
@@ -25,7 +19,6 @@ const productionDefaults: Partial<Record<DomainResource, unknown>> = {
   'trade.positions': [],
   'trade.reviews': [],
   'trade.sop': '',
-  'learning.domains': [],
 };
 
 /** Side effects: none. Selects demo fixtures outside production and empty domain defaults in production. */

@@ -1,6 +1,5 @@
 import { useState, type Dispatch, type FormEvent, type SetStateAction } from 'react';
-import { isCompletedToday, type DailyTodoItem } from './dailyTodos';
-import { todayKey } from '../schedule/scheduleState';
+import { isCompletedToday, todayKey, type DailyTodoItem } from './dailyTodos';
 
 type DailyTodoCardProps = {
   title: string;

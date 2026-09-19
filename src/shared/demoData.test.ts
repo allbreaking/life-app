@@ -3,7 +3,6 @@ import { runtimeInitialValue } from './demoData';
 
 test('removes demo fixtures from production domain defaults', () => {
   expect(runtimeInitialValue('trade.watchlist', [{ id: 'demo' }], true)).toEqual([]);
-  expect(runtimeInitialValue('work.tasks', { Q1: ['demo'], Q2: [], Q3: [], Q4: [] }, true)).toEqual({ Q1: [], Q2: [], Q3: [], Q4: [] });
   expect(runtimeInitialValue('trade.sop', 'demo SOP', true)).toBe('');
   expect(runtimeInitialValue('finance.goalCompletedUnits', 0, true)).toBe(1500);
 });

@@ -55,10 +55,10 @@ src-tauri/src/main.rs
 | 责任 | 文件/符号 | 排查重点 |
 |---|---|---|
 | React 入口 | `src/main.tsx` | 根节点、错误边界、全局样式导入 |
-| 应用壳 | `src/app/App.tsx::App` | 模块渲染、快捷键、桌面事件、共享日程状态 |
+| 应用壳 | `src/app/App.tsx::App` | 模块渲染、快捷键、桌面事件 |
 | 导航定义 | `src/app/navigation.ts::modules` | 模块 ID、标题、顺序 |
 | 导航恢复 | `src/app/useActiveModule.ts::useActiveModule` | `life-os.active-module` localStorage |
-| 桌面事件 | `src/app/desktopEvents.ts` | `desktop-action`、`menu-todo-complete` |
+| 桌面事件 | `src/app/desktopEvents.ts` | `desktop-action` |
 | 错误边界 | `src/app/AppErrorBoundary.tsx` | React 渲染异常兜底 |
 | 设计 token | `src/shared/styles/tokens.css` | 色彩、间距、字体变量 |
 | 全局样式 | `src/shared/styles/global.css` | 布局、组件、响应式、告警动画、焦点 |
@@ -70,15 +70,10 @@ src-tauri/src/main.rs
 
 | 功能 | 用户入口 | React 组件/函数 | 数据资源/副作用 | 算法/规则入口 | 主要测试 |
 |---|---|---|---|---|---|
-| 今日总览 | 左侧“今日总览” | `src/features/dashboard/Dashboard.tsx::Dashboard` | `schedule.scheduled`（由 App 注入） | `scheduleState.ts::todayScheduledTasks` | `src/app/App.test.tsx` |
+| 今日总览 | 左侧“今日总览” | `src/features/dashboard/Dashboard.tsx::Dashboard` | “今日待办”为占位；每日清单见下行 | — | `src/app/App.test.tsx` |
 | 每日输出 | 今日总览“每日输出”卡片 | `src/features/dashboard/DailyTodoCard.tsx::DailyTodoCard` | `dashboard.dailyOutput` | `dailyTodos.ts::isCompletedToday` | `src/app/App.test.tsx` |
 | 地球online日常任务 | 今日总览“地球online日常任务”卡片 | `src/features/dashboard/DailyTodoCard.tsx::DailyTodoCard` | `dashboard.dailyTasks` | `dailyTodos.ts::isCompletedToday` | `src/app/App.test.tsx` |
 | 人生原则 | 左侧“人生地图” | `src/features/compass/Compass.tsx::Compass` | `compass.principles` | 组件内长度校验 | `src/app/App.test.tsx` |
-| 工作四象限 | 左侧“工作” | `src/features/work/Work.tsx::Work` | `work.tasks`、`work.focusIds` | Q1≤2，Top3 仅 Q1/Q2 | `src/app/App.test.tsx` |
-| EOD | 工作页“EOD 日终总结” | `src/features/work/Work.tsx::EodForm` | `work.eodSubmitted` | HTML/组件表单校验 | `src/app/App.test.tsx`、静态规格 |
-| 任务排期 | 左侧“日程” | `src/features/schedule/Schedule.tsx::Schedule`、`TaskPool`、`DayCanvas` | `schedule.pool`、`schedule.scheduled` | `snapToQuarterHour`、`minutesToTime` | `src/features/schedule/scheduleModel.test.ts`、`src/app/App.test.tsx` |
-| 周/月视图 | 日程页 Tab | `WeekView`、`MonthView` | 只读 `schedule.scheduled` | 本地日期、周一为首日 | `App.test.tsx`、静态规格 |
-| 生活模板 | 日程页“新增生活日程” | `LifeTemplateManager` | `schedule.lifeSchedules` | `lifeTemplateOccursOn` | `scheduleModel.test.ts` |
 | 预算/记账与 500 元积累目标 | 左侧“财务” | `src/features/finance/Finance.tsx::Finance` | 五个 `finance.*` 资源；预算原地编辑；目标份数可增减 | `parseMoneyToCents`、`budgetProgress`、`parsePositiveWholeUnits`、`wealthGoalProgress` | `src/features/finance/financeModel.test.ts`、`src/app/App.test.tsx` |
 | 物品/食物 | 左侧“物品” | `src/features/items/Items.tsx::Items`、`ItemRow`、`FoodRow` | `items.items`、`items.foods`（稳定 ID 原行编辑/删除） | `itemModel.ts::foodExpiryStatus` | `src/features/items/itemModel.test.ts`、`src/app/App.test.tsx` |
 | 人物卡 | 左侧“社交” | `src/features/network/Network.tsx::Network` | `network.people` | 组件内字符串校验 | `src/app/App.test.tsx` |
@@ -88,10 +83,8 @@ src-tauri/src/main.rs
 | 行情刷新 | 投资页「刷新行情」按钮手动触发 | `Trade` 的 `refreshQuotes` | `fetch_market_quotes` + `trade.watchlist` | 五/六位代码校验、停牌/无效单只跳过 | `src/shared/ipc/marketQuote.test.ts`、Rust tests |
 | 持仓管理 | 投资页“持仓管理” | `WatchSelect`、`PositionRow`、`ClosedPositionRow` | `trade.positions`；下拉代码搜索为瞬时状态 | 代码搜索、五个价格/盈亏纯函数、稳定 ID 删除 | `src/features/trade/tradeModel.test.ts`、`src/app/App.test.tsx` |
 | 每日复盘 | 投资页“每日复盘” | `Trade`、`ReviewRow` | `trade.reviews` | 本地日期唯一 | `src/app/App.test.tsx` |
-| 学习领域 | 左侧“学习” | `src/features/learning/Learning.tsx::Learning` | `learning.domains` | 完成数/总数派生 | `src/app/App.test.tsx` |
 | 快捷录入 | `⌥ Space`/应用菜单 | `src/features/quick-capture/QuickCapture.tsx` | 仅焦点和弹层状态 | Tab focus trap | `src/app/App.test.tsx` |
 | 数据保护 | 页头“数据保护” | `src/features/data-protection/DataProtection.tsx` | 备份目录、SQLite 替换 | ID/大小/schema/完整性校验 | `src/shared/ipc/backup.test.ts`、Rust tests |
-| macOS 下一待办 | 系统菜单栏 | `App` + `src/shared/ipc/menuBarTodo.ts` | 原生状态项与 Tauri event | `todayScheduledTasks` + 稳定 ID | `src/app/App.test.tsx`、Rust tests |
 | 系统通知 | 当前无业务 UI | `src/shared/ipc/notification.ts` | OS notification + `notification_delivery` | 类型白名单、三元组去重 | `src/shared/ipc/notification.test.ts`、Rust tests |
 
 ## 4. 领域资源 Map
@@ -104,12 +97,6 @@ src-tauri/src/main.rs
 | `dashboard.completedTodoIndexes` | 当前组件未使用 | 数组 | 旧兼容资源 | `domain_entity/value` |
 | `dashboard.dailyOutput` | `DailyTodoCard` | 实体数组 | DailyTodoItem ID，`completedOn` 按日刷新 | `domain_entity` |
 | `dashboard.dailyTasks` | `DailyTodoCard` | 实体数组 | DailyTodoItem ID，`completedOn` 按日刷新 | `domain_entity` |
-| `work.tasks` | `Work` | 对象标量 | Q1–Q4 → Task[] | `domain_value` |
-| `work.focusIds` | `Work` | 字符串数组 | 最多 3 | `domain_entity`（`row-n`） |
-| `work.eodSubmitted` | `EodForm` | boolean | 仅提交标记 | `domain_value` |
-| `schedule.pool` | `Schedule` | 实体数组 | `Task.id` | `domain_entity` |
-| `schedule.scheduled` | `App` | 实体数组 | 稳定任务 ID、date/time/duration/completed | `domain_entity` |
-| `schedule.lifeSchedules` | `Schedule` | 实体数组 | 模板 ID、重复规则 | `domain_entity` |
 | `finance.budgetCents` | `Finance` | integer | ≥0，整数分 | `domain_value` |
 | `finance.spentCents` | `Finance` | integer | ≥0，整数分 | `domain_value` |
 | `finance.pending` | `Finance` | 实体数组 | 待评估项 ID、正整数分 | `domain_entity` |
@@ -122,7 +109,6 @@ src-tauri/src/main.rs
 | `trade.positions` | `Trade` | 实体数组 | Position ID、watchlistId 引用由 UI 保证 | `domain_entity` |
 | `trade.reviews` | `Trade` | 数组 | 业务身份为 date；存储身份当前为 `row-n` | `domain_entity` |
 | `trade.sop` | `Trade` | string | ≤500 | `domain_value` |
-| `learning.domains` | `Learning` | 实体数组 | Domain ID，内嵌 milestones/tasks | `domain_entity` |
 
 ### 4.1 通用持久化链路
 
@@ -156,11 +142,7 @@ feature 调用 setValue
 
 | 算法 | 入口 | 输入 → 输出 | 边界/注意事项 |
 |---|---|---|---|
-| 今日任务筛选排序 | `scheduleState.ts::todayScheduledTasks` | ScheduledTask[] → 当天按 time 排序 | 使用设备本地日期，不是北京时间 |
 | 每日待办完成判断 | `dailyTodos.ts::isCompletedToday` | DailyTodoItem + today → boolean | `completedOn === 本地今天`，隔天自动刷新为未完成 |
-| 15 分钟吸附 | `scheduleModel.ts::snapToQuarterHour` | minute → `[0,1425]` 最近 15 分钟 | 非有限数返回 0 |
-| 分钟转时间 | `scheduleModel.ts::minutesToTime` | minute → `HH:mm` | 内部再次吸附 |
-| 重复模板投影 | `scheduleModel.ts::lifeTemplateOccursOn` | template + local Date → boolean | 双周以 anchorDate 中午差值 `%14` |
 | 金额转整数分 | `financeModel.ts::parseMoneyToCents` | `+/-N(.NN)` → cents/null | 拒绝 0、指数、千分位、>2 位小数和非安全整数 |
 | 预算预警 | `financeModel.ts::budgetProgress` | spent/budget/now → 百分比与 tone | budget=0 视为 100%；时间进度含当天分钟 |
 | 食物到期 | `itemModel.ts::foodExpiryStatus` | `YYYY-MM-DD` + today → days/tone/label | 本地中午差；≤3 Crimson，≤7 Amber |
@@ -179,26 +161,7 @@ feature 调用 setValue
 
 ## 6. 跨层功能链路
 
-### 6.1 今日总览与 macOS 菜单栏单一数据源
-
-```text
-App 加载 schedule.scheduled
-  ├─ Schedule：排期/退回/增时
-  ├─ Dashboard：当天展示/切换完成
-  └─ App effect：todayScheduledTasks → 第一条未完成
-      → syncMenuBarTodo → Rust sync_menu_bar_todo → macOS tray
-
-用户在 tray 点击“标记完成”
-  → Rust emit('menu-todo-complete', stableTaskId)
-  → desktopEvents.subscribeMenuTodoCompletion
-  → App 按 ID 将 completed=true
-  → 持久化 schedule.scheduled
-  → effect 自动投影下一条
-```
-
-入口文件：`src/app/App.tsx`、`src/features/dashboard/Dashboard.tsx`、`src/features/schedule/scheduleState.ts`、`src/shared/ipc/menuBarTodo.ts`、`src-tauri/src/desktop_shell.rs`。
-
-### 6.2 新浪行情
+### 6.1 新浪行情
 
 ```text
 新增/换股/手动刷新
@@ -215,7 +178,7 @@ App 加载 schedule.scheduled
 
 排查顺序：是否桌面 runtime → 代码格式（五/六位）→ Rust 网络/证书 → 新浪响应字段是否按市场正确 → `quoteAt` Zod 格式 → watchlist 保存。
 
-### 6.3 数据备份与恢复
+### 6.2 数据备份与恢复
 
 ```text
 页头“数据保护”
@@ -231,7 +194,7 @@ App 加载 schedule.scheduled
 
 数据库与备份目录在 Tauri `app_data_dir` 下创建，具体绝对路径不暴露给 UI。
 
-### 6.4 系统通知
+### 6.3 系统通知
 
 ```text
 （未来业务调用点）
@@ -246,7 +209,7 @@ App 加载 schedule.scheduled
 
 当前链路从 typed IPC 开始可用，但没有 feature 调用入口。排查“没有系统通知”时先用 `rg 'deliverNotification' src/features` 确认是否已接线。
 
-### 6.5 原生菜单与系统快捷键
+### 6.4 原生菜单与系统快捷键
 
 ```text
 src-tauri/src/desktop_shell.rs::install
@@ -274,7 +237,6 @@ install_global_shortcut
 | 列出备份 | `list_backups` | `backup.rs::list` | 读目录元数据 |
 | 恢复备份 | `restore_backup` | `backup.rs::restore` | 替换 live SQLite，创建回滚点 |
 | 行情 | `fetch_market_quotes` | `market_quote.rs::fetch` | 固定主机 HTTPS GET |
-| 菜单栏同步 | `sync_menu_bar_todo` | `desktop_shell.rs` | 修改原生瞬时 UI |
 
 数据库入口：
 
@@ -289,15 +251,9 @@ install_global_shortcut
 ```text
 App
 ├─ Sidebar / page header
-├─ Dashboard (scheduled/setScheduled props; dailyOutput/dailyTasks persisted)
+├─ Dashboard (dailyOutput/dailyTasks persisted)
 │  └─ DailyTodoCard (add/toggle/edit/delete local)
 ├─ Compass (principles + openForm local)
-├─ Work (tasks/focus persisted; openForm/message local)
-│  └─ EodForm (submitted persisted)
-├─ Schedule (pool/life persisted; view/date/message local)
-│  ├─ TaskPool
-│  ├─ DayCanvas / WeekView / MonthView
-│  └─ LifeTemplateManager
 ├─ Finance (budget/spent/pending/last persisted; necessary/message local)
 ├─ Items (foods/items persisted; selected type/message local)
 ├─ Network (people persisted; message local)
@@ -306,12 +262,11 @@ App
 │  ├─ WatchSelect
 │  ├─ PositionRow / ClosedPositionRow
 │  └─ ReviewRow
-├─ Learning (domains persisted; active workspace/message local)
 ├─ QuickCapture (open controlled by App; focus refs local)
 └─ DataProtection (open controlled by App; list/status/busy local)
 ```
 
-局部状态在刷新或组件卸载时丢失是预期行为，例如编辑草稿、当前 Tab、弹层开关、消息、日程视图和选择的预览日期。
+局部状态在刷新或组件卸载时丢失是预期行为，例如编辑草稿、当前 Tab、弹层开关、消息和选择的预览日期。
 
 ## 9. 按症状排查索引
 
@@ -320,10 +275,6 @@ App
 | 左侧模块点不开/标题不对 | `navigation.ts`、`App.tsx` | `useActiveModule.ts`、localStorage | 无 URL 路由；模块 ID 必须在白名单 |
 | 保存后当前页有、重启没了 | `useDomainResource.ts` | `domainResource.ts`、Rust command、`domain_*` 表 | IPC 失败仅 console.error；浏览器预览不持久化 |
 | 生产环境没有示例卡片 | 具体 feature 的 `import.meta.env.PROD` | `shared/demoData.ts` | 生产主动移除 fixture |
-| 今日总览与菜单栏不一致 | `App.tsx` 的三个 schedule effects | `todayScheduledTasks`、desktop events | 菜单栏只取今日第一条未完成 |
-| 菜单栏完成了错误任务 | `desktop_shell.rs::current_id` | event payload 正则、App 按 ID map | 不应使用数组索引 |
-| 排期后池和日程同时有/同时无 | `Schedule::scheduleTask/unscheduleTask` | 两个资源的 IPC 保存 | 两次资源替换不是后端原子事务 |
-| 生活模板某天不出现 | `lifeTemplateOccursOn` | weekday/monthDay/anchorDate、本地日期 | 双周必须有 anchorDate 且 weekday 匹配 |
 | 金额被拒绝 | `parseMoneyToCents` | 输入正负号和小数位 | 零、千分位、指数和三位小数都拒绝 |
 | 预算颜色异常 | `budgetProgress` | 设备年月日/时分、budget=0 | 时间进度按本地当前月实时计算 |
 | 食物提前/延后一天告警 | `foodExpiryStatus` | 输入日期、设备本地时区 | 算法用本地中午，避免 UTC 漂移 |
@@ -355,8 +306,7 @@ App
 
 按模块选择测试：
 
-- 壳层/菜单/九模块交互：`src/app/App.test.tsx`
-- 日程算法：`src/features/schedule/scheduleModel.test.ts`
+- 壳层/菜单/六模块交互：`src/app/App.test.tsx`
 - 财务算法：`src/features/finance/financeModel.test.ts`
 - 物品算法：`src/features/items/itemModel.test.ts`
 - 投资算法：`src/features/trade/tradeModel.test.ts`

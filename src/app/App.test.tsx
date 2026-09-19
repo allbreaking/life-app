@@ -3,12 +3,10 @@ import { beforeEach, expect, test, vi } from 'vitest';
 import { App } from './App';
 
 let desktopAction: ((event: { payload: string }) => void) | undefined;
-let menuTodoComplete: ((event: { payload: string }) => void) | undefined;
 let tradeWatchAdded: ((event: { payload: unknown }) => void) | undefined;
 vi.mock('@tauri-apps/api/event', () => ({
   listen: vi.fn((name: string, handler: (event: { payload: never }) => void) => {
     if (name === 'desktop-action') desktopAction = handler as typeof desktopAction;
-    if (name === 'menu-todo-complete') menuTodoComplete = handler as typeof menuTodoComplete;
     if (name === 'trade-watch-added') tradeWatchAdded = handler as typeof tradeWatchAdded;
     return Promise.resolve(vi.fn());
   }),
@@ -22,7 +20,7 @@ test('handles native menu actions for quick capture and dashboard navigation', a
     value: { invoke: vi.fn().mockResolvedValue(null) },
   });
   render(<App />);
-  fireEvent.click(screen.getByRole('button', { name: '学习' }));
+  fireEvent.click(screen.getByRole('button', { name: '投资' }));
   await act(async () => desktopAction?.({ payload: 'open-quick-capture' }));
   expect(screen.getByRole('dialog', { name: '快捷录入' })).toBeInTheDocument();
   await act(async () => desktopAction?.({ payload: 'show-dashboard' }));
@@ -31,21 +29,10 @@ test('handles native menu actions for quick capture and dashboard navigation', a
   Reflect.deleteProperty(window, '__TAURI_INTERNALS__');
 });
 
-test('marks the scheduled task complete through the menu bar task id', async () => {
-  Object.defineProperty(window, '__TAURI_INTERNALS__', {
-    configurable: true,
-    value: { invoke: vi.fn().mockResolvedValue(null) },
-  });
-  render(<App />);
-  await act(async () => menuTodoComplete?.({ payload: 'today-architecture' }));
-  expect(screen.getByText('#LifeOS 架构梳理').closest('button')).toHaveClass('done');
-  Reflect.deleteProperty(window, '__TAURI_INTERNALS__');
-});
-
-test('renders all nine module navigation entries', () => {
+test('renders all six module navigation entries', () => {
   render(<App />);
   expect(screen.getAllByRole('button', { current: false })).toBeTruthy();
-  for (const name of ['今日总览', '人生地图', '工作', '日程', '财务', '物品', '社交', '投资', '学习']) {
+  for (const name of ['今日总览', '人生地图', '财务', '物品', '社交', '投资']) {
     expect(screen.getByRole('button', { name })).toBeInTheDocument();
   }
 });
@@ -58,9 +45,9 @@ test('keeps window chrome out of the app and exposes no quick capture button', (
 });
 
 test('restores module selection and opens quick capture via Option+Space', () => {
-  window.localStorage.setItem('life-os.active-module', 'learning');
+  window.localStorage.setItem('life-os.active-module', 'trade');
   render(<App />);
-  expect(screen.getByRole('heading', { level: 1, name: '学习' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { level: 1, name: '投资' })).toBeInTheDocument();
   fireEvent.keyDown(window, { altKey: true, code: 'Space' });
   expect(screen.getByRole('dialog', { name: '快捷录入' })).toBeInTheDocument();
 });
@@ -99,7 +86,6 @@ test('matches the frozen dashboard information structure', () => {
   expect(screen.getByText('本月北极星')).toBeInTheDocument();
   expect(screen.getByRole('heading', { name: /今日待办/ })).toBeInTheDocument();
   expect(screen.getByRole('heading', { name: /预警聚合/ })).toBeInTheDocument();
-  expect(screen.getByRole('heading', { name: '本周投入统计' })).toBeInTheDocument();
   expect(screen.getByRole('heading', { name: '即将到来的重要日期' })).toBeInTheDocument();
 });
 
@@ -133,35 +119,6 @@ test('renders compass principles and accepts a validated local principle draft',
   fireEvent.change(screen.getByPlaceholderText('原则内容'), { target: { value: '先输出再收集' } });
   fireEvent.click(screen.getByRole('button', { name: '添加' }));
   expect(screen.getByText('学习：先输出再收集')).toBeInTheDocument();
-});
-
-test('enforces the Q1 active task limit', () => {
-  render(<App />);
-  fireEvent.click(screen.getByRole('button', { name: '工作' }));
-  fireEvent.click(screen.getByRole('button', { name: '新增 Q1 任务' }));
-  fireEvent.change(screen.getByPlaceholderText('任务名 @优先级 #项目'), { target: { value: '第三个紧急任务' } });
-  fireEvent.click(screen.getByRole('button', { name: '添加任务' }));
-  expect(screen.getByRole('status')).toHaveTextContent('Q1 同时进行不能超过 2 项');
-});
-
-test('schedules one source task without duplicating it and can return it to the pool', () => {
-  render(<App />);
-  fireEvent.click(screen.getByRole('button', { name: '日程' }));
-  expect(screen.getByRole('tab', { name: '日视图', selected: true })).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: '排期 客户环境部署修复' }));
-  expect(screen.queryByRole('button', { name: '排期 客户环境部署修复' })).not.toBeInTheDocument();
-  expect(screen.getByText(/09:00 客户环境部署修复/)).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: '增加 客户环境部署修复 时长 15 分钟' }));
-  expect(screen.getByRole('status')).toHaveTextContent('任务时长已按 15 分钟增加');
-  fireEvent.click(screen.getByRole('button', { name: '撤销排期 客户环境部署修复' }));
-  expect(screen.getByRole('button', { name: '排期 客户环境部署修复' })).toBeInTheDocument();
-});
-
-test('marks projected life schedules as read-only', () => {
-  render(<App />);
-  fireEvent.click(screen.getByRole('button', { name: '日程' }));
-  expect(screen.getAllByText(/生活模板 · 只读/).length).toBeGreaterThan(0);
-  expect(screen.queryByRole('button', { name: /撤销排期 晨间拉伸/ })).not.toBeInTheDocument();
 });
 
 test('routes non-essential expenses into the month-end queue', () => {
@@ -378,6 +335,25 @@ test('only offers watchlist instruments when creating a position', () => {
   expect(screen.getByRole('status')).toHaveTextContent('清仓记录已删除');
 });
 
+test('selects a position instrument by mouse click and closes on outside click', () => {
+  render(<App />);
+  fireEvent.click(screen.getByRole('button', { name: '投资' }));
+  const trigger = screen.getByRole('button', { name: '观察列表标的' });
+  fireEvent.click(trigger);
+  const options = within(screen.getByRole('listbox', { name: '观察列表标的选项' })).getAllByRole('option');
+  expect(options).toHaveLength(2);
+  fireEvent.mouseDown(options[1]);
+  fireEvent.click(options[1]);
+  expect(trigger).toHaveTextContent('002230 科大讯飞');
+  expect(trigger.closest('form')?.querySelector('input[name="watchlistId"]')).toHaveValue('w2');
+  expect(screen.queryByRole('listbox', { name: '观察列表标的选项' })).not.toBeInTheDocument();
+
+  fireEvent.click(trigger);
+  expect(screen.getByRole('listbox', { name: '观察列表标的选项' })).toBeInTheDocument();
+  fireEvent.mouseDown(document.body);
+  expect(screen.queryByRole('listbox', { name: '观察列表标的选项' })).not.toBeInTheDocument();
+});
+
 test('merges an agent-added watch event by stable id without restarting', async () => {
   Object.defineProperty(window, '__TAURI_INTERNALS__', {
     configurable: true,
@@ -568,13 +544,37 @@ test('deletes an active position without creating a closed-position record', () 
   expect(screen.queryByText('+7.85%')).not.toBeInTheDocument();
 });
 
-test('opens a full learning domain workspace and derives milestone progress', () => {
+test('records shares when opening a position and shows derived market value', () => {
   render(<App />);
-  fireEvent.click(screen.getByRole('button', { name: '学习' }));
-  expect(screen.queryByText('阶段性任务')).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: /#Java\/Kafka 深化/ }));
-  expect(screen.getByRole('button', { name: '← 返回领域列表' })).toBeInTheDocument();
-  expect(screen.getByText('里程碑进度 2/4（自动派生）')).toBeInTheDocument();
-  fireEvent.click(screen.getByRole('checkbox', { name: /梳理故障恢复机制/ }));
-  expect(screen.getByText('里程碑进度 3/4（自动派生）')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: '投资' }));
+  const sharesInput = screen.getByPlaceholderText('股数');
+  const priceInput = screen.getByPlaceholderText('建仓价');
+  expect(sharesInput).toBeRequired();
+  fireEvent.change(priceInput, { target: { value: '1500' } });
+  fireEvent.change(sharesInput, { target: { value: '200' } });
+  fireEvent.click(screen.getByRole('button', { name: '分批建仓' }));
+  expect(screen.getByRole('status')).toHaveTextContent('持仓已加入本次运行状态');
+  const newRow = screen.getByText('¥1500.00').closest('.position-row');
+  expect(newRow).toHaveTextContent('200');
+  expect(newRow).toHaveTextContent('¥300000.00');
+});
+
+test('edits position shares in place and recomputes market value', () => {
+  render(<App />);
+  fireEvent.click(screen.getByRole('button', { name: '投资' }));
+  const positionRow = screen.getByText('¥42.40').closest('.position-row');
+  expect(positionRow).toHaveTextContent('100');
+  expect(positionRow).toHaveTextContent('¥3820.00');
+  fireEvent.click(screen.getByRole('button', { name: '编辑 科大讯飞 股数' }));
+  const sharesEditor = screen.getByRole('spinbutton', { name: '编辑 科大讯飞 股数' });
+  fireEvent.change(sharesEditor, { target: { value: '200' } });
+  fireEvent.click(screen.getByRole('button', { name: '保存' }));
+  expect(positionRow).toHaveTextContent('200');
+  expect(positionRow).toHaveTextContent('¥7640.00');
+  expect(screen.getByRole('status')).toHaveTextContent('股数已更新');
+  fireEvent.click(screen.getByRole('button', { name: '编辑 科大讯飞 股数' }));
+  fireEvent.change(screen.getByRole('spinbutton', { name: '编辑 科大讯飞 股数' }), { target: { value: '999' } });
+  fireEvent.click(screen.getByRole('button', { name: '取消' }));
+  expect(positionRow).toHaveTextContent('200');
+  expect(positionRow).toHaveTextContent('¥7640.00');
 });

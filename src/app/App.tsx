@@ -2,27 +2,20 @@ import { useEffect, useState } from 'react';
 import { Dashboard } from '../features/dashboard/Dashboard';
 import { Finance } from '../features/finance/Finance';
 import { Items } from '../features/items/Items';
-import { Learning } from '../features/learning/Learning';
 import { Network } from '../features/network/Network';
 import { Compass } from '../features/compass/Compass';
 import { QuickCapture } from '../features/quick-capture/QuickCapture';
-import { Schedule } from '../features/schedule/Schedule';
-import { Work } from '../features/work/Work';
 import { Trade } from '../features/trade/Trade';
 import { DataProtection } from '../features/data-protection/DataProtection';
 import { modules } from './navigation';
 import { useActiveModule } from './useActiveModule';
-import { subscribeDesktopActions, subscribeMenuTodoCompletion } from './desktopEvents';
-import { useDomainResource } from '../shared/ipc/useDomainResource';
-import { initialScheduledTasks, scheduledTasksSchema, todayScheduledTasks } from '../features/schedule/scheduleState';
-import { syncMenuBarTodo } from '../shared/ipc/menuBarTodo';
+import { subscribeDesktopActions } from './desktopEvents';
 
 /** Side effects: persists active navigation and subscribes to Option+Space and desktop actions. */
 export function App() {
   const [activeModule, setActiveModule] = useActiveModule();
   const [captureOpen, setCaptureOpen] = useState(false);
   const [dataProtectionOpen, setDataProtectionOpen] = useState(false);
-  const [scheduled, setScheduled] = useDomainResource('schedule.scheduled', scheduledTasksSchema, initialScheduledTasks);
   const current = modules.find((module) => module.id === activeModule)!;
 
   useEffect(() => {
@@ -56,20 +49,6 @@ export function App() {
     };
   }, [setActiveModule]);
 
-  useEffect(() => {
-    let disposed = false;
-    let unlisten: () => void = () => undefined;
-    void subscribeMenuTodoCompletion((taskId) => {
-      setScheduled((items) => items.map((item) => item.id === taskId ? { ...item, completed: true } : item));
-    }).then((stop) => { if (disposed) stop(); else unlisten = stop; });
-    return () => { disposed = true; unlisten(); };
-  }, [setScheduled]);
-
-  useEffect(() => {
-    const next = todayScheduledTasks(scheduled).find((task) => !task.completed);
-    void syncMenuBarTodo(next ? { id: next.id, time: next.time, title: next.title } : null);
-  }, [scheduled]);
-
   return (
     <div className="desktop-shell">
       <a className="skip-link" href="#main-content">跳到主内容</a>
@@ -90,7 +69,7 @@ export function App() {
             <div><h1>{current.label}</h1><p>{current.subtitle}</p></div>
             <button className="command-button" onClick={() => setDataProtectionOpen(true)}>数据保护</button>
           </header>
-          {activeModule === 'dashboard' ? <Dashboard scheduled={scheduled} setScheduled={setScheduled} /> : activeModule === 'compass' ? <Compass /> : activeModule === 'work' ? <Work /> : activeModule === 'schedule' ? <Schedule scheduled={scheduled} setScheduled={setScheduled} /> : activeModule === 'finance' ? <Finance /> : activeModule === 'items' ? <Items /> : activeModule === 'network' ? <Network /> : activeModule === 'trade' ? <Trade /> : activeModule === 'learning' ? <Learning /> : (
+          {activeModule === 'dashboard' ? <Dashboard /> : activeModule === 'compass' ? <Compass /> : activeModule === 'finance' ? <Finance /> : activeModule === 'items' ? <Items /> : activeModule === 'network' ? <Network /> : activeModule === 'trade' ? <Trade /> : (
             <section className="card module-placeholder"><span aria-hidden="true">{current.symbol}</span><h2>{current.label}</h2><p>该模块将在后续迁移中按冻结原型逐项实现。</p></section>
           )}
         </main>

@@ -3,11 +3,9 @@ import { z } from 'zod';
 
 export const domainResourceSchema = z.enum([
   'compass.principles', 'dashboard.completedTodoIndexes', 'dashboard.dailyOutput', 'dashboard.dailyTasks',
-  'work.tasks', 'work.focusIds', 'work.eodSubmitted',
-  'schedule.pool', 'schedule.scheduled', 'schedule.lifeSchedules',
   'finance.budgetCents', 'finance.spentCents', 'finance.pending', 'finance.lastTransaction', 'finance.goalCompletedUnits',
   'items.foods', 'items.items', 'network.people',
-  'trade.watchlist', 'trade.positions', 'trade.reviews', 'trade.sop', 'learning.domains',
+  'trade.watchlist', 'trade.positions', 'trade.reviews', 'trade.sop',
 ]);
 export type DomainResource = z.infer<typeof domainResourceSchema>;
 const errorSchema = z.object({ code: z.string(), message: z.string() });
