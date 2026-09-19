@@ -3,6 +3,7 @@ import { Dashboard } from '../features/dashboard/Dashboard';
 import { Finance } from '../features/finance/Finance';
 import { Items } from '../features/items/Items';
 import { Network } from '../features/network/Network';
+import { Health } from '../features/health/Health';
 import { Compass } from '../features/compass/Compass';
 import { QuickCapture } from '../features/quick-capture/QuickCapture';
 import { Trade } from '../features/trade/Trade';
@@ -69,7 +70,7 @@ export function App() {
             <div><h1>{current.label}</h1><p>{current.subtitle}</p></div>
             <button className="command-button" onClick={() => setDataProtectionOpen(true)}>数据保护</button>
           </header>
-          {activeModule === 'dashboard' ? <Dashboard /> : activeModule === 'compass' ? <Compass /> : activeModule === 'finance' ? <Finance /> : activeModule === 'items' ? <Items /> : activeModule === 'network' ? <Network /> : activeModule === 'trade' ? <Trade /> : (
+          {activeModule === 'dashboard' ? <Dashboard /> : activeModule === 'compass' ? <Compass /> : activeModule === 'finance' ? <Finance /> : activeModule === 'items' ? <Items /> : activeModule === 'network' ? <Network /> : activeModule === 'health' ? <Health /> : activeModule === 'trade' ? <Trade /> : (
             <section className="card module-placeholder"><span aria-hidden="true">{current.symbol}</span><h2>{current.label}</h2><p>该模块将在后续迁移中按冻结原型逐项实现。</p></section>
           )}
         </main>

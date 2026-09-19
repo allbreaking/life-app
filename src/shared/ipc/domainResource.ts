@@ -5,6 +5,7 @@ export const domainResourceSchema = z.enum([
   'compass.principles', 'dashboard.completedTodoIndexes', 'dashboard.dailyOutput', 'dashboard.dailyTasks',
   'finance.budgetCents', 'finance.spentCents', 'finance.pending', 'finance.lastTransaction', 'finance.goalCompletedUnits',
   'items.foods', 'items.items', 'network.people',
+  'health.records',
   'trade.watchlist', 'trade.positions', 'trade.reviews', 'trade.sop',
 ]);
 export type DomainResource = z.infer<typeof domainResourceSchema>;

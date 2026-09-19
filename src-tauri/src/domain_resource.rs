@@ -24,6 +24,7 @@ const RESOURCES: &[(&str, &str, &str)] = &[
     ("items.foods", "items", "foods"),
     ("items.items", "items", "items"),
     ("network.people", "network", "people"),
+    ("health.records", "health", "records"),
     ("trade.watchlist", "trade", "watchlist"),
     ("trade.positions", "trade", "positions"),
     ("trade.reviews", "trade", "reviews"),

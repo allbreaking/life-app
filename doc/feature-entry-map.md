@@ -77,6 +77,7 @@ src-tauri/src/main.rs
 | 预算/记账与 500 元积累目标 | 左侧“财务” | `src/features/finance/Finance.tsx::Finance` | 五个 `finance.*` 资源；预算原地编辑；目标份数可增减 | `parseMoneyToCents`、`budgetProgress`、`parsePositiveWholeUnits`、`wealthGoalProgress` | `src/features/finance/financeModel.test.ts`、`src/app/App.test.tsx` |
 | 物品/食物 | 左侧“物品” | `src/features/items/Items.tsx::Items`、`ItemRow`、`FoodRow` | `items.items`、`items.foods`（稳定 ID 原行编辑/删除） | `itemModel.ts::foodExpiryStatus` | `src/features/items/itemModel.test.ts`、`src/app/App.test.tsx` |
 | 人物卡 | 左侧“社交” | `src/features/network/Network.tsx::Network` | `network.people` | 组件内字符串校验 | `src/app/App.test.tsx` |
+| 健康今日/月历/详情 | 左侧“健康” | `src/features/health/Health.tsx::Health`、`HealthDetail` | `health.records` | `healthModel.ts::sleepDuration/normalizeMood/monthGridDays/periodBarClass` 等 | `src/features/health/healthModel.test.ts`、`src/app/App.test.tsx` |
 | 投资 SOP | 投资页顶部卡片 | `src/features/trade/Trade.tsx::Trade` | `trade.sop` | trim、1–500 字 | `src/app/App.test.tsx` |
 | 观察列表 | 投资页“观察列表” | `Trade`、`WatchRow`、`WatchRatings` | `trade.watchlist` + 新浪 HTTP；搜索/评分排序为瞬时状态 | `normalizeWatch`、`parseWatchTags`、`parseOptionalWatchRating`、`isValidTargetRange`、`priceAlert`、`searchWatchlist`、`filterWatchlist`、`sortWatchlistByRating`、`paginateWatchlist` | `src/features/trade/tradeModel.test.ts`、`src/app/App.test.tsx` |
 | AI Agent 添加观察标的 | MCP `add_trade_watch` | `life-os-mcp` → Unix socket bridge → `TradeWatchService` | 原子追加 `trade.watchlist` + 幂等收据 + 新浪 HTTP | 五位港股或六位 A 股代码、名称、三档目标价、标签、四维评分、request ID | Rust MCP/SQLite tests、前端 IPC/组件测试 |
@@ -105,6 +106,7 @@ src-tauri/src/main.rs
 | `items.foods` | `Items` | 实体数组 | ID、位置、到期日 | `domain_entity` |
 | `items.items` | `Items` | 实体数组 | ID、类型、位置 | `domain_entity` |
 | `network.people` | `Network` | 实体数组 | Person ID | `domain_entity` |
+| `health.records` | `Health` | 对象标量 | `date → HealthRecord`，date 为本地 `YYYY-MM-DD` | `domain_value` |
 | `trade.watchlist` | `Trade` | 实体数组 | Watch ID、代码唯一由 UI 保证 | `domain_entity` |
 | `trade.positions` | `Trade` | 实体数组 | Position ID、watchlistId 引用由 UI 保证 | `domain_entity` |
 | `trade.reviews` | `Trade` | 数组 | 业务身份为 date；存储身份当前为 `row-n` | `domain_entity` |
@@ -257,6 +259,8 @@ App
 ├─ Finance (budget/spent/pending/last persisted; necessary/message local)
 ├─ Items (foods/items persisted; selected type/message local)
 ├─ Network (people persisted; message local)
+├─ Health (health.records persisted; selectedDate/cursor/panel local)
+│  └─ HealthDetail (per-day editor; edits delegate to Health)
 ├─ Trade (watchlist/positions/reviews/sop persisted; editing/tab/quote status local)
 │  ├─ WatchRow
 │  ├─ WatchSelect
@@ -306,9 +310,10 @@ App
 
 按模块选择测试：
 
-- 壳层/菜单/六模块交互：`src/app/App.test.tsx`
+- 壳层/菜单/七模块交互：`src/app/App.test.tsx`
 - 财务算法：`src/features/finance/financeModel.test.ts`
 - 物品算法：`src/features/items/itemModel.test.ts`
+- 健康算法：`src/features/health/healthModel.test.ts`
 - 投资算法：`src/features/trade/tradeModel.test.ts`
 - IPC schema：`src/shared/ipc/*.test.ts`
 - 生产 fixture：`src/shared/demoData.test.ts`

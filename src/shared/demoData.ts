@@ -15,6 +15,7 @@ const productionDefaults: Partial<Record<DomainResource, unknown>> = {
   'items.foods': [],
   'items.items': [],
   'network.people': [],
+  'health.records': {},
   'trade.watchlist': [],
   'trade.positions': [],
   'trade.reviews': [],

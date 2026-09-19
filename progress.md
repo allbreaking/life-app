@@ -6,7 +6,7 @@ DEV
 
 ## 当前节点
 
-TRADE AGENT WATCHLIST / COMPLETE
+HEALTH MODULE / COMPLETE
 
 ## 计划
 
@@ -162,6 +162,9 @@ TRADE AGENT WATCHLIST / COMPLETE
 - [x] TRADE AGENT WATCHLIST PLAN：确定 Rust 服务、bridge、MCP、前端复用、打包和自动验证顺序
 - [x] TRADE AGENT WATCHLIST BUILD：实现共享 Rust TradeWatchService、Tauri command/event、0600 Unix socket bridge、MCP stdio sidecar 与 `.app` externalBin
 - [x] TRADE AGENT WATCHLIST VERIFY：68 项前端测试、24 项 Rust 测试、类型、静态规格、生产构建、发布审计、macOS `.app` bundle、MCP 工具发现、失败零写入及多实例 socket 保护通过
+- [x] HEALTH MODULE SPEC：依据 `life_os_health_v1.html` 原型定义健康模块数据模型、交互、副作用与验收
+- [x] HEALTH MODULE BUILD：实现今日快速记录、健康月历、按日期详情编辑、经期与身体事件，接入 `health.records` 领域资源、导航与 Rust 白名单
+- [x] HEALTH MODULE VERIFY：81 项前端测试、25 项 Rust 测试、类型、静态规格、生产构建与发布审计通过；清理未迁移模块死 CSS 释放发布预算
 - [ ] P6-C2 RELEASE ENV：Developer ID 签名、公证、安装后权限冒烟、依赖漏洞审计与发布审批（需要真实凭据/联网环境）
 
 ## 当前校验
@@ -202,6 +205,9 @@ TRADE AGENT WATCHLIST / COMPLETE
 - [x] 投资每日复盘原地编辑、取消、删除与重启恢复
 - [x] 投资 SOP 同卡片原地编辑、保存/取消、输入校验与重启恢复
 - [x] 学习领域列表、整页工作区、里程碑派生进度与领域任务结构
+- [x] 健康今日快速记录（天气/温度/湿度/睡眠/运动/情绪）、跨午夜睡眠时长与“已记录”状态
+- [x] 健康月历 42 格渲染、非当月置灰、事件类型着色、经期连续条带与日期详情编辑
+- [x] 健康经期标记/经血量/症状多选、身体事件预置标签与备注、生产空状态与 `health.records` 持久化
 - [x] 快捷录入焦点约束/恢复、主内容跳转与全局键盘焦点可见
 - [x] P6-B1 原生菜单 ID 白名单、快捷录入/总览事件与非 Tauri 降级边界
 - [x] macOS 标准编辑菜单角色与所有文本输入控件的系统剪切、复制、粘贴、全选和撤销/重做快捷键

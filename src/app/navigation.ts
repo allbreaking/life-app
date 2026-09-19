@@ -4,6 +4,7 @@ export const modules = [
   { id: 'finance', label: '财务', symbol: '▱', subtitle: '让资源流向真正重要的事' },
   { id: 'items', label: '物品', symbol: '◇', subtitle: '知道拥有什么，以及它在哪里' },
   { id: 'network', label: '社交', symbol: '◎', subtitle: '真诚记录，不量化关系' },
+  { id: 'health', label: '健康', symbol: '♥', subtitle: '先记最少的信息，需要时再补充' },
   { id: 'trade', label: '投资', symbol: '↗', subtitle: '纪律优先于预测' },
 ] as const;
 

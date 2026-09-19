@@ -29,10 +29,10 @@ test('handles native menu actions for quick capture and dashboard navigation', a
   Reflect.deleteProperty(window, '__TAURI_INTERNALS__');
 });
 
-test('renders all six module navigation entries', () => {
+test('renders all seven module navigation entries', () => {
   render(<App />);
   expect(screen.getAllByRole('button', { current: false })).toBeTruthy();
-  for (const name of ['今日总览', '人生地图', '财务', '物品', '社交', '投资']) {
+  for (const name of ['今日总览', '人生地图', '财务', '物品', '社交', '健康', '投资']) {
     expect(screen.getByRole('button', { name })).toBeInTheDocument();
   }
 });
@@ -577,4 +577,75 @@ test('edits position shares in place and recomputes market value', () => {
   fireEvent.click(screen.getByRole('button', { name: '取消' }));
   expect(positionRow).toHaveTextContent('200');
   expect(positionRow).toHaveTextContent('¥7640.00');
+});
+
+test('renders the health module with the frozen today quick record', () => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date(2026, 8, 12, 12));
+  try {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: '健康' }));
+    expect(screen.getByRole('heading', { name: '健康月历' })).toBeInTheDocument();
+    expect(screen.getByText('今天 · 9月12日')).toBeInTheDocument();
+    expect(screen.getByLabelText('天气')).toHaveValue('多云');
+    expect(screen.getByLabelText('运动时长')).toHaveValue('35');
+    expect(screen.getByText('7h34m')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '情绪平淡' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: '经期 · 已记录' })).toBeInTheDocument();
+    expect(screen.getByText('健康月历').closest('section')).toBeInTheDocument();
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test('marks today as a period day and toggles symptoms', () => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date(2026, 8, 10, 12));
+  try {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: '健康' }));
+    fireEvent.click(screen.getByRole('button', { name: '＋ 记录经期' }));
+    fireEvent.click(screen.getByRole('button', { name: '标记今天为经期' }));
+    expect(screen.getByRole('button', { name: '✓ 今天是经期' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '痛经' }));
+    expect(screen.getByRole('button', { name: '痛经' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: '经期 · 已记录' })).toBeInTheDocument();
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test('records a body event from the quick panel after picking a preset', () => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date(2026, 8, 12, 12));
+  try {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: '健康' }));
+    fireEvent.click(screen.getByRole('button', { name: '＋ 皮肤' }));
+    expect(screen.getByText('记录皮肤')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '保存' }));
+    expect(screen.getByRole('status')).toHaveTextContent('先点一下要记录的情况');
+    fireEvent.click(screen.getByRole('button', { name: '新痘' }));
+    fireEvent.change(screen.getByLabelText('事件备注'), { target: { value: '下巴' } });
+    fireEvent.click(screen.getByRole('button', { name: '保存' }));
+    expect(screen.getByRole('status')).toHaveTextContent('皮肤记录已保存');
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test('edits a selected calendar day in the detail panel', () => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date(2026, 8, 12, 12));
+  try {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: '健康' }));
+    expect(screen.getByText('点击月历中的日期查看并编辑')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '9月7日' }));
+    expect(screen.getByText('9月7日 · 周一')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('详情天气'), { target: { value: '晴' } });
+    expect(screen.getByLabelText('详情天气')).toHaveValue('晴');
+  } finally {
+    vi.useRealTimers();
+  }
 });
