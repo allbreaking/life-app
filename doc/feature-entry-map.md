@@ -70,11 +70,20 @@ src-tauri/src/main.rs
 
 | 功能 | 用户入口 | React 组件/函数 | 数据资源/副作用 | 算法/规则入口 | 主要测试 |
 |---|---|---|---|---|---|
-| 今日总览 | 左侧“今日总览” | `src/features/dashboard/Dashboard.tsx::Dashboard` | “今日待办”为占位；每日清单见下行 | — | `src/app/App.test.tsx` |
+| 今日总览 | 左侧“今日总览” | `src/features/dashboard/Dashboard.tsx::Dashboard` | 日历同步、每日清单、预警聚合、重要日期见下行 | — | `src/app/App.test.tsx` |
+| 日历同步（今日待办） | 今日总览“今日待办”卡片 | `src/features/dashboard/TodayAgenda.tsx::TodayAgenda` | 只读 macOS EventKit 当天日程 + 当天/逾期未完成提醒；提醒可勾选回写，日程完成状态本地存 `dashboard.completedEvents` | `calendar.ts::syncTodayCalendar/setReminderCompleted` | `src/shared/ipc/calendar.test.ts` |
 | 每日输出 | 今日总览“每日输出”卡片 | `src/features/dashboard/DailyTodoCard.tsx::DailyTodoCard` | `dashboard.dailyOutput` | `dailyTodos.ts::isCompletedToday` | `src/app/App.test.tsx` |
 | 地球online日常任务 | 今日总览“地球online日常任务”卡片 | `src/features/dashboard/DailyTodoCard.tsx::DailyTodoCard` | `dashboard.dailyTasks` | `dailyTodos.ts::isCompletedToday` | `src/app/App.test.tsx` |
+| 预警聚合 | 今日总览“预警聚合”卡片 | `Dashboard`（只读聚合） | 只读 `items.foods`、`finance.budgetCents`、`finance.spentCents`；不新增业务数据 | `dashboardModel.ts::aggregateAlerts/alertCardTone`，复用 `foodExpiryStatus`、`budgetProgress` | `src/features/dashboard/dashboardModel.test.ts`、`src/app/App.test.tsx` |
+| 即将到来的重要日期 | 今日总览“即将到来的重要日期”卡片 | `Dashboard`（只读聚合） | 只读 `network.people`（`importantDate` 自由文本，不推算倒计时） | `dashboardModel.ts::aggregateImportantDates` | `src/features/dashboard/dashboardModel.test.ts` |
 | 人生原则 | 左侧“人生地图” | `src/features/compass/Compass.tsx::Compass` | `compass.principles` | 组件内长度校验 | `src/app/App.test.tsx` |
-| 预算/记账与 500 元积累目标 | 左侧“财务” | `src/features/finance/Finance.tsx::Finance` | 五个 `finance.*` 资源；预算原地编辑；目标份数可增减 | `parseMoneyToCents`、`budgetProgress`、`parsePositiveWholeUnits`、`wealthGoalProgress` | `src/features/finance/financeModel.test.ts`、`src/app/App.test.tsx` |
+| 预算/记账与 500 元积累目标 | 左侧“财务” | `src/features/finance/Finance.tsx::Finance` | 六个 `finance.*` 资源；金额前 `− / +` 收支方向；预算原地编辑；预算/时间双进度条；目标 `+ / −` 每次 1 份并带彩带/负反馈特效 | `parseMoneyToCents`、`budgetProgress`、`dailyBudgetPlan`、`wealthGoalProgress` | `src/features/finance/financeModel.test.ts`、`src/app/App.test.tsx` |
+| 非必要支出逐项审批 | 财务概览“非必要支出待评估队列”卡片 | `Finance`（`pending-card`、`pending-row`） | `finance.pending`；记录时**不写账单**，通过才补建 `approved` 账单并累加 `finance.spentCents`，拒绝只出队 | `approvePending`、`rejectPending`、`countsToBudget` | `src/app/App.test.tsx` |
+| 一进一出拦截 | 快捷记账提交衣物支出后 | `Finance`（`intercept-card`、`intercept-row`） | 读写 `items.items`（清理 1 件），完成后才写 `finance.transactions` 并计入预算 | `isWardrobeExpense` | `src/features/finance/financeModel.test.ts`、`src/app/App.test.tsx` |
+| 清空财务数据 | 财务页工具栏「清空财务数据」 | `Finance`（`finance-toolbar`） | 两步确认后清空预算/已用/待评估/账单/订阅与目标进度 | — | `src/app/App.test.tsx` |
+| 全部账单 | 财务页「全部账单」按钮 | `Finance`（`bills-card`、`bill-row`） | `finance.transactions`；账单原地编辑/删除会同步回滚预算与待评估队列；搜索、时间与类型筛选为瞬时状态 | `filterTransactions`、`rangeBounds`、`transactionTotals` | `src/features/finance/financeModel.test.ts`、`src/app/App.test.tsx` |
+| 周期订阅预警（只读） | 财务概览“周期订阅预警”卡片 | `Finance`（`subscription-card`、`subscription-preview-row`） | 只读 `finance.subscriptions`；仅列预警项，按最高级别闪烁 | `subscriptionAlert`、`subscriptionCardTone` | `src/features/finance/financeModel.test.ts`、`src/app/App.test.tsx` |
+| 周期订阅管理 | 财务页底部“周期订阅管理”卡片 | `Finance`（`subscription-manager`、`subscription-row`） | `finance.subscriptions`；新增/原地编辑/删除 | `subscriptionAlert` | `src/features/finance/financeModel.test.ts`、`src/app/App.test.tsx` |
 | 物品/食物 | 左侧“物品” | `src/features/items/Items.tsx::Items`、`ItemRow`、`FoodRow` | `items.items`、`items.foods`（稳定 ID 原行编辑/删除） | `itemModel.ts::foodExpiryStatus` | `src/features/items/itemModel.test.ts`、`src/app/App.test.tsx` |
 | 人物卡 | 左侧“社交” | `src/features/network/Network.tsx::Network` | `network.people` | 组件内字符串校验 | `src/app/App.test.tsx` |
 | 健康今日/月历/详情 | 左侧“健康” | `src/features/health/Health.tsx::Health`、`HealthDetail` | `health.records` | `healthModel.ts::sleepDuration/normalizeMood/monthGridDays/periodBarClass` 等 | `src/features/health/healthModel.test.ts`、`src/app/App.test.tsx` |
@@ -98,13 +107,15 @@ src-tauri/src/main.rs
 | `dashboard.completedTodoIndexes` | 当前组件未使用 | 数组 | 旧兼容资源 | `domain_entity/value` |
 | `dashboard.dailyOutput` | `DailyTodoCard` | 实体数组 | DailyTodoItem ID，`completedOn` 按日刷新 | `domain_entity` |
 | `dashboard.dailyTasks` | `DailyTodoCard` | 实体数组 | DailyTodoItem ID，`completedOn` 按日刷新 | `domain_entity` |
+| `dashboard.completedEvents` | `TodayAgenda` | 对象标量 | `eventId → 完成日期`，按日刷新 | `domain_value` |
 | `finance.budgetCents` | `Finance` | integer | ≥0，整数分 | `domain_value` |
 | `finance.spentCents` | `Finance` | integer | ≥0，整数分 | `domain_value` |
-| `finance.pending` | `Finance` | 实体数组 | 待评估项 ID、正整数分 | `domain_entity` |
-| `finance.lastTransaction` | `Finance` | object/null | 有符号整数分 | `domain_value` |
+| `finance.pending` | `Finance` | 实体数组 | 待评估项 ID、正整数分、可选 `billId`（仅旧数据关联账单） | `domain_entity` |
 | `finance.goalCompletedUnits` | `Finance` | integer | 0–3000 份，初始 1500 | `domain_value` |
+| `finance.subscriptions` | `Finance` | 实体数组 | 订阅 ID、名称、正整数分、下次扣费日 | `domain_entity` |
+| `finance.transactions` | `Finance` | 实体数组 | 账单 ID、非零整数分、类型（necessary/approved/unnecessary/income）、本地 `YYYY-MM-DD`；仅 necessary 与 approved 计入预算 | `domain_entity` |
 | `items.foods` | `Items` | 实体数组 | ID、位置、到期日 | `domain_entity` |
-| `items.items` | `Items` | 实体数组 | ID、类型、位置 | `domain_entity` |
+| `items.items` | `Items`、`Finance`（一进一出清理） | 实体数组 | ID、类型、位置；schema 与 demo 初值在 `itemModel.ts` | `domain_entity` |
 | `network.people` | `Network` | 实体数组 | Person ID | `domain_entity` |
 | `health.records` | `Health` | 对象标量 | `date → HealthRecord`，date 为本地 `YYYY-MM-DD` | `domain_value` |
 | `trade.watchlist` | `Trade` | 实体数组 | Watch ID、代码唯一由 UI 保证 | `domain_entity` |
@@ -136,6 +147,7 @@ feature 调用 setValue
 
 - UI 当次正确、重启丢失：看 `useDomainResource.ts` 的 `console.error`、command 是否注册、SQLite 文件权限。
 - 只有开发预览丢失：这是预期；浏览器模式没有 Tauri runtime。
+- dev 与生产数据库分离：`tauri dev`（debug profile）写 `life-os.dev.sqlite3` 与 `backups-dev`，生产构建写 `life-os.sqlite3` 与 `backups`；两者互不污染。
 - 数据结构解析失败：同时检查组件内 Zod schema 和存储中的 JSON。
 - 空数组重新变成 fixture：确认是否非生产模式，以及存储是否真正保存了 `[]` 到 `domain_value`。
 - 同一 requestId 冲突：查 `command_receipt` 中对应 command；正常前端每次生成新 UUID。
@@ -147,11 +159,21 @@ feature 调用 setValue
 | 每日待办完成判断 | `dailyTodos.ts::isCompletedToday` | DailyTodoItem + today → boolean | `completedOn === 本地今天`，隔天自动刷新为未完成 |
 | 金额转整数分 | `financeModel.ts::parseMoneyToCents` | `+/-N(.NN)` → cents/null | 拒绝 0、指数、千分位、>2 位小数和非安全整数 |
 | 预算预警 | `financeModel.ts::budgetProgress` | spent/budget/now → 百分比与 tone | budget=0 视为 100%；时间进度含当天分钟 |
+| 月度日均预算 | `financeModel.ts::dailyBudgetPlan` | spent/budget/now → 日均与剩余日均 | budget=0 时两项均 0；剩余天数含今天 |
+| 账单时间区间 | `financeModel.ts::rangeBounds` | BillRange + now → {from,to} | 全部/自定义返回空串；其余为闭区间本地日期 |
+| 账单搜索筛选 | `financeModel.ts::filterTransactions` | 账单 + {备注,类型,起止} → 子集 | 备注忽略大小写子串；日期闭区间；不改输入 |
+| 订阅扣费级别 | `financeModel.ts::subscriptionAlert` | 下次扣费日 + now → days/tone/label | 当天或逾期 crimson；≤3 天 amber；其余 normal |
+| 订阅卡片级别 | `financeModel.ts::subscriptionCardTone` | Subscription[] → tone/null | 取最高级别；空集合返回 null |
+| 一进一出触发 | `financeModel.ts::isWardrobeExpense` | 备注文本 → boolean | 命中 `WARDROBE_KEYWORDS` 衣物词即拦截，需先清理 1 件旧物品 |
+| 账单是否计入预算 | `financeModel.ts::countsToBudget` | TransactionKind → boolean | 仅 `necessary` 与 `approved` 为 true；`unnecessary`/`income` 为 false |
 | 食物到期 | `itemModel.ts::foodExpiryStatus` | `YYYY-MM-DD` + today → days/tone/label | 本地中午差；≤3 Crimson，≤7 Amber |
 | 目标价兼容 | `tradeModel.ts::normalizeWatch` | 旧 Watch → 三档 Watch | 缺失乐观/悲观时使用中枢价；不改输入对象 |
 | 目标区间校验 | `tradeModel.ts::isValidTargetRange` | 四价格 → boolean | 乐观≥中枢≥悲观>0；0≤安全<中枢 |
 | 新增目标价校验 | `tradeModel.ts::isValidTargetPrices` | 三档目标价 → boolean | 新增不读取安全价；合法记录固定 `safety: 0` |
 | 股价告警 | `tradeModel.ts::priceAlert` | current/target/safety → status | 先判达到目标，再判安全价 |
+| 今日总览预警聚合 | `dashboardModel.ts::aggregateAlerts` | 跨模块数据 → DashboardAlert[] | 只读聚合；食物非 normal、预算 >0 时非 normal |
+| 今日总览重要日期 | `dashboardModel.ts::aggregateImportantDates` | people[] → DashboardImportantDate[] | 仅带 `importantDate` 的联系人；自由文本不推算倒计时 |
+| 预警卡片级别 | `dashboardModel.ts::alertCardTone` | DashboardAlert[] → tone/null | crimson > amber；无告警返回 null |
 | 四维评分/时间排序 | `sortWatchlistByRating` / `sortWatchlistNewestFirst` | Watch[] + 条件 → Watch[] | 默认最新加入优先；评分未填写时置后；不改输入 |
 | 浮动/已实现盈亏 | `unrealizedProfitPercent` / `realizedProfitPercent` | cost/current(close) → percent | 非有限或非正价格返回 NaN |
 | 目标/安全距离 | `targetDistancePercent` / `safetyDistancePercent` | cost + threshold → percent | 安全距离方向为 `cost/safety-1` |
@@ -194,7 +216,7 @@ feature 调用 setValue
   → 成功后 window.location.reload()
 ```
 
-数据库与备份目录在 Tauri `app_data_dir` 下创建，具体绝对路径不暴露给 UI。
+数据库与备份目录在 Tauri `app_data_dir` 下创建，具体绝对路径不暴露给 UI。开发构建使用 `life-os.dev.sqlite3` 与 `backups-dev`，生产构建使用 `life-os.sqlite3` 与 `backups`（见 `src-tauri/src/lib.rs::storage_paths`）。
 
 ### 6.3 系统通知
 
@@ -226,6 +248,27 @@ install_global_shortcut
   → 同一 emit_action 链路
 ```
 
+### 6.5 macOS 日历与提醒事项（EventKit）
+
+```text
+TodayAgenda「同步日历」按钮
+  → syncTodayCalendar()（typed IPC + Zod）
+  → invoke('sync_today_calendar')
+  → CalendarService::sync_today
+      → EKEventStore 请求日历/提醒事项 full access（首次弹系统授权框）
+      → 当天日程：predicateForEventsWithStartDate… + eventsMatchingPredicate
+      → 提醒：predicateForIncompleteRemindersWithDueDateStarting…（None → 今天结束）
+      → 提取为纯 Rust 快照（不跨线程持有 EventKit 对象）
+
+提醒勾选完成
+  → setReminderCompleted(id, completed)
+  → invoke('set_reminder_completed')
+  → CalendarService::set_reminder_completed
+      → calendarItemWithIdentifier → downcast EKReminder → setCompleted + saveReminder
+```
+
+权限通过 `src-tauri/Info.plist` 的 `NSCalendarsUsageDescription` / `NSRemindersUsageDescription` 声明；EventKit 对象非 `Send`，只在单次调用线程内创建并释放。非 macOS 环境 command 返回 `UNSUPPORTED`。
+
 ## 7. Rust/SQLite 实现入口
 
 | 能力 | Command | Service/实现 | 直接副作用 |
@@ -239,10 +282,13 @@ install_global_shortcut
 | 列出备份 | `list_backups` | `backup.rs::list` | 读目录元数据 |
 | 恢复备份 | `restore_backup` | `backup.rs::restore` | 替换 live SQLite，创建回滚点 |
 | 行情 | `fetch_market_quotes` | `market_quote.rs::fetch` | 固定主机 HTTPS GET |
+| 日历同步 | `sync_today_calendar` | `calendar.rs::sync_today` | macOS 只读 EventKit；首次请求日历/提醒授权 |
+| 提醒回写 | `set_reminder_completed` | `calendar.rs::set_reminder_completed` | macOS EventKit 修改提醒完成状态 |
 
 数据库入口：
 
 - `src-tauri/src/db.rs`：打开连接、启用约束、顺序执行三版迁移。
+- `src-tauri/src/lib.rs::storage_paths`：按 debug/release 选择数据库文件名与备份目录，隔离 dev fixture 与生产库。
 - `src-tauri/migrations/001_initial.sql`：领域表、通知收据、命令收据。
 - `src-tauri/migrations/002_module_state.sql`：旧 JSON 模块状态。
 - `src-tauri/migrations/003_domain_resources.sql`：当前通用实体/标量资源表和迁移标记。
@@ -253,10 +299,11 @@ install_global_shortcut
 ```text
 App
 ├─ Sidebar / page header
-├─ Dashboard (dailyOutput/dailyTasks persisted)
+├─ Dashboard (dailyOutput/dailyTasks persisted; foods/budget/spent/people read-only)
+│  ├─ TodayAgenda (calendar snapshot + synced/loading/message local; completedEvents persisted)
 │  └─ DailyTodoCard (add/toggle/edit/delete local)
 ├─ Compass (principles + openForm local)
-├─ Finance (budget/spent/pending/last persisted; necessary/message local)
+├─ Finance (budget/spent/pending/bills/subscriptions persisted; 一进一出读写 items.items；sign/necessary/bill+sub filters/intercept/message local)
 ├─ Items (foods/items persisted; selected type/message local)
 ├─ Network (people persisted; message local)
 ├─ Health (health.records persisted; selectedDate/cursor/panel local)
@@ -280,6 +327,16 @@ App
 | 保存后当前页有、重启没了 | `useDomainResource.ts` | `domainResource.ts`、Rust command、`domain_*` 表 | IPC 失败仅 console.error；浏览器预览不持久化 |
 | 生产环境没有示例卡片 | 具体 feature 的 `import.meta.env.PROD` | `shared/demoData.ts` | 生产主动移除 fixture |
 | 金额被拒绝 | `parseMoneyToCents` | 输入正负号和小数位 | 零、千分位、指数和三位小数都拒绝 |
+| 记了账但预算没变 | `Finance::submitTransaction` | 收支方向是否 `−`、类型是否必要支出 | `+` 为收入不计预算；非必要支出只进待评估队列 |
+| 账单里找不到某笔 | 「全部账单」筛选条件 | `billQuery/billKind/billFrom/billTo` | 搜索与筛选为瞬时状态，清空搜索或切回“全部时间” |
+| 删/改账单后预算或队列不一致 | `Finance::removeBillEffects`/`applyBillEffects` | 账单 `kind`、待评估项 `billId` | 编辑按“先回滚旧记录、再应用新记录”处理；结算后账单类型置为 `necessary` |
+| 删完账单但已用预算没归零 | 账单 `kind` 分布 | `finance.spentCents` 是否只有必要支出支撑 | 只有 `necessary` 账单计入已用预算，收入/非必要不影响；demo 初值与账单合计自洽 |
+| 订阅卡片不闪烁 | `subscriptionAlert`/`subscriptionCardTone` | 下次扣费日与本地今天 | 当天/逾期 crimson、≤3 天 amber，其余 normal；空列表不闪烁 |
+| 衣物支出没被拦截 | `financeModel.ts::WARDROBE_KEYWORDS` | 备注是否含衣物词 | 只匹配列出的关键词；收入（`+`）不拦截 |
+| 待评估项无法通过 | `Finance::approvePending` | `budgetCents − spentCents` 是否够这一项 | 结余不足时只提示不改数据；「全部通过」按总额判断 |
+| 记了非必要支出但账单里没有 | `Finance::recordTransaction` | `kind === 'unnecessary'` 时只写 `finance.pending` | 设计如此；通过审批后才补建 `approved` 账单 |
+| 安装后仍有测试数据 | 财务工具栏「清空财务数据」 | 数据来自桌面版 SQLite（旧版开发构建曾把 fixture 写入生产库；现开发构建改用独立 `life-os.dev.sqlite3`） | 用两步确认清空；其他模块的 fixture 需各自清理 |
+| 目标进度按钮点不动 | `Finance::changeGoalUnits` | `goal.remainingUnits` / `goal.completedUnits` | 到上限或 0 时按钮禁用；每次只变动 1 份 |
 | 预算颜色异常 | `budgetProgress` | 设备年月日/时分、budget=0 | 时间进度按本地当前月实时计算 |
 | 食物提前/延后一天告警 | `foodExpiryStatus` | 输入日期、设备本地时区 | 算法用本地中午，避免 UTC 漂移 |
 | 股票新增按钮一直失败 | `Trade::addWatch` | `fetchMarketQuotes`、Rust adapter | 浏览器版不可用；必须先成功取价 |

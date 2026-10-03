@@ -1,6 +1,9 @@
+use std::path::{Path, PathBuf};
+
 mod agent_bridge;
 mod agent_mcp;
 mod backup;
+mod calendar;
 mod commands;
 mod db;
 mod desktop_shell;
@@ -9,6 +12,23 @@ mod error;
 mod market_quote;
 mod notification;
 mod trade_watch;
+
+/// Selects isolated storage locations. Side effects: none.
+/// Debug builds (e.g. `tauri dev`) keep demo fixtures in a separate database so they never touch
+/// the production library (`life-os.sqlite3`) or its backup directory.
+fn storage_paths(data_dir: &Path) -> (PathBuf, PathBuf) {
+    if cfg!(debug_assertions) {
+        (
+            data_dir.join("life-os.dev.sqlite3"),
+            data_dir.join("backups-dev"),
+        )
+    } else {
+        (
+            data_dir.join("life-os.sqlite3"),
+            data_dir.join("backups"),
+        )
+    }
+}
 
 /// Runs the bundled MCP stdio adapter. Side effects: reads/writes stdio and connects to the fixed
 /// Life-OS Unix socket; it does not open the application database or a TCP listener.
@@ -29,7 +49,7 @@ pub fn run() {
                 .expect("application data directory is unavailable");
             std::fs::create_dir_all(&data_dir)
                 .expect("failed to create application data directory");
-            let database_path = data_dir.join("life-os.sqlite3");
+            let (database_path, backups_dir) = storage_paths(&data_dir);
             let connection =
                 db::open_shared(&database_path).expect("failed to open Life-OS database");
             app.manage(domain_resource::DomainResourceService::new(
@@ -48,8 +68,9 @@ pub fn run() {
             app.manage(trade_watch.clone());
             app.manage(backup::BackupService::new(
                 connection,
-                data_dir.join("backups"),
+                backups_dir,
             ));
+            app.manage(calendar::CalendarService::new());
             desktop_shell::install(app)?;
             #[cfg(desktop)]
             desktop_shell::install_global_shortcut(app)?;
@@ -68,7 +89,27 @@ pub fn run() {
             commands::list_backups,
             commands::restore_backup,
             commands::fetch_market_quotes,
+            calendar::sync_today_calendar,
+            calendar::set_reminder_completed,
         ])
         .run(tauri::generate_context!())
         .expect("failed to run Life-OS");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::storage_paths;
+
+    #[test]
+    fn debug_builds_isolate_from_the_production_database() {
+        if !cfg!(debug_assertions) {
+            // Release builds intentionally use the production library.
+            return;
+        }
+        let data_dir = std::path::Path::new("/tmp/life-os");
+        let (database, backups) = storage_paths(data_dir);
+        assert_eq!(database, data_dir.join("life-os.dev.sqlite3"));
+        assert_eq!(backups, data_dir.join("backups-dev"));
+        assert_ne!(database, data_dir.join("life-os.sqlite3"));
+    }
 }
