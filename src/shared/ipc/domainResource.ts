@@ -2,8 +2,8 @@ import { invoke } from '@tauri-apps/api/core';
 import { z } from 'zod';
 
 export const domainResourceSchema = z.enum([
-  'compass.principles', 'dashboard.completedTodoIndexes', 'dashboard.dailyOutput', 'dashboard.dailyTasks',
-  'finance.budgetCents', 'finance.spentCents', 'finance.pending', 'finance.lastTransaction', 'finance.goalCompletedUnits',
+  'compass.principles', 'dashboard.completedTodoIndexes', 'dashboard.dailyOutput', 'dashboard.dailyTasks', 'dashboard.completedEvents',
+  'finance.budgetCents', 'finance.spentCents', 'finance.pending', 'finance.goalCompletedUnits', 'finance.transactions', 'finance.subscriptions',
   'items.foods', 'items.items', 'network.people',
   'health.records',
   'trade.watchlist', 'trade.positions', 'trade.reviews', 'trade.sop',

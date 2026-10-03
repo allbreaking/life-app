@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Life-OS 需要访问你的日历，用于在「今日总览」展示当天的日程安排。</string>
+	<key>NSRemindersUsageDescription</key>
+	<string>Life-OS 需要访问你的提醒事项，用于在「今日总览」展示并同步当天待办。</string>
+</dict>
+</plist>
