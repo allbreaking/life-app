@@ -62,7 +62,7 @@ for (const path of files) {
 }
 
 const limits = { js: 384 * 1024, css: 34 * 1024, gzip: 122 * 1024 };
-assert(largestJs <= limits.js, `入口 JavaScript ${largestJs} B 超过 ${limits.js} B`);
+assert(largestJs <= limits.js, `单个 JavaScript 产物 ${largestJs} B 超过 ${limits.js} B`);
 assert(largestCss <= limits.css, `CSS ${largestCss} B 超过 ${limits.css} B`);
 assert(gzipTotal <= limits.gzip, `HTML/CSS/JS gzip 总量 ${gzipTotal} B 超过 ${limits.gzip} B`);
 for (const fixtureMarker of ['贵州茅台', '科大讯飞', '客户环境部署报错修复', '鲜牛奶', '老王', 'Java/Kafka 深化', '大盘震荡，茅台', 'ChatGPT Plus', '买猫粮']) {

@@ -70,7 +70,7 @@
 - migration dry-run 与外键检查通过。
 - 需求追踪矩阵无未覆盖的 P0/P1 项。
 - 无高危依赖告警；构建产物完成签名验证。
-- `npm run release:verify` 检查入口 JS ≤ 384 KiB、CSS ≤ 34 KiB、HTML/CSS/JS gzip 总量 ≤ 122 KiB。
+- `npm run release:verify` 检查单个 JS 产物 ≤ 384 KiB、CSS ≤ 34 KiB、HTML/CSS/JS gzip 总量 ≤ 122 KiB。
 - npm/Cargo/Tauri 版本一致，CSP、capability、identifier 与 bundle 图标通过静态审计。
 - 本机未签名 bundle 只用于安装冒烟；正式发布必须在受控环境完成签名、公证和签名验证。
 - 生产 JS 产物扫描典型 fixture 标识，不得包含开发环境的人物、股票、任务、物品和复盘样例。

@@ -122,7 +122,7 @@ P6 分批交付，先完成不依赖平台权限的可访问性基线，再接�
 ## P6-C1 性能预算与可重复发布门禁
 
 - Web 生产产物必须先由 `npm run build` 全量重建，再执行发布审计；审计不得依赖旧 `dist/` 或开发服务器。
-- 首屏静态资源预算：入口 JavaScript 单文件不超过 384 KiB、CSS 单文件不超过 34 KiB、`dist/` 中 HTML/CSS/JavaScript 的 gzip 总量不超过 122 KiB。图片与桌面图标不计入首屏脚本预算。
+- 首屏静态资源预算：单个 JavaScript 产物不超过 384 KiB、CSS 单文件不超过 34 KiB、`dist/` 中 HTML/CSS/JavaScript 的 gzip 总量不超过 122 KiB。第三方依赖经 vendor 分块独立成 chunk，单产物限额对入口与各 vendor chunk 一致生效。图片与桌面图标不计入首屏脚本预算。
 - npm、Cargo 与 Tauri 配置中的应用版本必须完全一致；产品名、bundle identifier 必须为非空稳定值，identifier 固定为 `app.life-os.desktop`。
 - Tauri CSP 禁止 `unsafe-inline`、`unsafe-eval`、通配远程源以及 `http:`/`https:` 网络源；Tauri 内部 `http://ipc.localhost` 是唯一例外。capability 继续只允许主窗口的 `core:default`，不得静默开放 shell、通用文件系统、网络或任意窗口权限。
 - bundle 必须显式引用仓库内存在的 `.icns`、`.ico` 与 PNG 图标。生成配置与正式源文件参与审计，`target/`、`dist/` 等派生产物不作为配置来源。

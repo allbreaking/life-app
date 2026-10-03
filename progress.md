@@ -166,6 +166,9 @@ HEALTH MODULE / COMPLETE
 - [x] HEALTH MODULE BUILD：实现今日快速记录、健康月历、按日期详情编辑、经期与身体事件，接入 `health.records` 领域资源、导航与 Rust 白名单
 - [x] HEALTH MODULE VERIFY：81 项前端测试、25 项 Rust 测试、类型、静态规格、生产构建与发布审计通过；清理未迁移模块死 CSS 释放发布预算
 - [x] DEV FIXTURE ISOLATION：开发构建改用独立 `life-os.dev.sqlite3` 与 `backups-dev`，演示 fixture 不再写入生产库 `life-os.sqlite3`
+- [x] VENDOR CODE SPLITTING SPEC：第三方依赖独立成 chunk，入口只保留应用代码；预算阈值与 gzip 总量口径不变，单产物限额对全部 chunk 生效
+- [x] VENDOR CODE SPLITTING BUILD：`vite.config.ts` 增加 `build.rollupOptions.output.manualChunks`，拆出 `react-vendor`（react/react-dom/scheduler）与 `vendor`（其余 node_modules）
+- [x] VENDOR CODE SPLITTING VERIFY：102 项前端测试、27 项 Rust 测试、类型、静态规格、生产构建与发布审计通过；最大单 JS 产物 382296 B → 192361 B，gzip 总量 120527 B
 - [ ] P6-C2 RELEASE ENV：Developer ID 签名、公证、安装后权限冒烟、依赖漏洞审计与发布审批（需要真实凭据/联网环境）
 
 ## 当前校验
@@ -234,5 +237,6 @@ HEALTH MODULE / COMPLETE
 - [x] P6-B3 通知白名单、成功去重、失败重试与不同 occurrence 边界
 - [x] P6-B4 应用内快照 ID/目录边界、一致性备份、完整性/外键/schema 校验与恢复
 - [x] P6-C1 JS/CSS/gzip 预算、版本/CSP/capability/identifier/icon 审计与未签名 DMG 构建
+- [x] 发布产物 vendor 分块：react/react-dom/scheduler 与其余依赖各自独立成 chunk，最大单 JS 产物回落至 192 KiB，gzip 总量保持 120527 B
 - [ ] 1440×900、1024×768、窄屏截图回归（当前会话未暴露浏览器控制接口）
 - [ ] Developer ID 签名、公证、安装后平台权限冒烟与联网依赖漏洞审计（需真实发布环境）
