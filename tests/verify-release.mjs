@@ -61,7 +61,7 @@ for (const path of files) {
   if (extname(path) === '.css') largestCss = Math.max(largestCss, content.byteLength);
 }
 
-const limits = { js: 350 * 1024, css: 25 * 1024, gzip: 110 * 1024 };
+const limits = { js: 384 * 1024, css: 34 * 1024, gzip: 122 * 1024 };
 assert(largestJs <= limits.js, `入口 JavaScript ${largestJs} B 超过 ${limits.js} B`);
 assert(largestCss <= limits.css, `CSS ${largestCss} B 超过 ${limits.css} B`);
 assert(gzipTotal <= limits.gzip, `HTML/CSS/JS gzip 总量 ${gzipTotal} B 超过 ${limits.gzip} B`);

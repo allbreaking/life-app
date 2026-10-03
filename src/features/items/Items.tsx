@@ -1,27 +1,6 @@
 import { useState, type FormEvent } from 'react';
-import { z } from 'zod';
 import { useDomainResource } from '../../shared/ipc/useDomainResource';
-import { foodExpiryStatus } from './itemModel';
-
-const ITEM_TYPES = ['消耗品', '保养品', '使用时期', '固定资产'] as const;
-const ALL_ITEM_TYPES = [...ITEM_TYPES, '食物'] as const;
-type ItemType = (typeof ALL_ITEM_TYPES)[number];
-type Food = { id: string; name: string; location: string; expiry: string };
-type Item = { id: string; name: string; type: ItemType; location: string; detail: string };
-
-const foodSchema = z.array(z.object({
-  id: z.string().min(1).max(100),
-  name: z.string().min(1).max(200),
-  location: z.string().min(1).max(200),
-  expiry: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-}).strict());
-const itemSchema = z.array(z.object({
-  id: z.string().min(1).max(100),
-  name: z.string().min(1).max(200),
-  type: z.enum(ALL_ITEM_TYPES),
-  location: z.string().min(1).max(200),
-  detail: z.string().max(500),
-}).strict());
+import { ALL_ITEM_TYPES, ITEM_TYPES, foodExpiryStatus, foodSchema, initialFoods, initialItems, itemSchema, type Food, type Item, type ItemType } from './itemModel';
 
 /**
  * Spec: docs/specs/item-list-management/01-item-list-management.spec.md.
@@ -29,14 +8,8 @@ const itemSchema = z.array(z.object({
  */
 export function Items() {
   const [type, setType] = useState<ItemType>('消耗品');
-  const [foods, setFoods] = useDomainResource('items.foods', foodSchema, (import.meta.env.PROD ? [] : [
-    { id: 'f1', name: '鲜牛奶', location: '冰箱冷藏层', expiry: '2026-08-04' },
-    { id: 'f2', name: '鸡蛋', location: '冰箱蛋架', expiry: '2026-08-18' },
-  ]) as Food[]);
-  const [items, setItems] = useDomainResource('items.items', itemSchema, (import.meta.env.PROD ? [] : [
-    { id: 'i1', name: '净水器滤芯', type: '保养品', location: '厨房水槽下', detail: '上次更换：62 天前 · 周期 90 天' },
-    { id: 'i2', name: 'MacBook Pro', type: '固定资产', location: '书房', detail: '购入：2024-03 · 保修至 2027-03' },
-  ]) as Item[]);
+  const [foods, setFoods] = useDomainResource('items.foods', foodSchema, initialFoods);
+  const [items, setItems] = useDomainResource('items.items', itemSchema, initialItems);
   const [message, setMessage] = useState('');
 
   const submit = (event: FormEvent<HTMLFormElement>) => {

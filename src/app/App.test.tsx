@@ -121,42 +121,188 @@ test('renders compass principles and accepts a validated local principle draft',
   expect(screen.getByText('学习：先输出再收集')).toBeInTheDocument();
 });
 
-test('routes non-essential expenses into the month-end queue', () => {
+test('routes non-essential expenses into the queue without creating a bill', () => {
   render(<App />);
   fireEvent.click(screen.getByRole('button', { name: '财务' }));
+  expect(screen.getByRole('button', { name: /全部账单（6）/ })).toBeInTheDocument();
+
   fireEvent.click(screen.getByRole('button', { name: '非必要支出' }));
-  fireEvent.change(screen.getByPlaceholderText('金额，如 -35 或 +200'), { target: { value: '-88' } });
-  fireEvent.change(screen.getByPlaceholderText('备注，如 买猫粮'), { target: { value: '新键盘' } });
+  fireEvent.change(screen.getByPlaceholderText('0.00'), { target: { value: '88' } });
+  fireEvent.change(screen.getByPlaceholderText('备注'), { target: { value: '新键盘' } });
   fireEvent.click(screen.getByRole('button', { name: '记一笔' }));
-  expect(screen.getByRole('status')).toHaveTextContent('已进入月末评估队列');
+  expect(screen.getByRole('status')).toHaveTextContent('已进入待评估队列');
   expect(screen.getByText(/新键盘/)).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /全部账单（6）/ })).toBeInTheDocument();
 });
 
-test('shows the 500 yuan goal and manually increases validated units', () => {
+test('accumulates necessary spending into the monthly budget and lists it in all bills', () => {
   render(<App />);
   fireEvent.click(screen.getByRole('button', { name: '财务' }));
-  expect(screen.getByRole('progressbar', { name: '500 元积累目标进度' })).toHaveAttribute('aria-valuenow', '1500');
+  const budgetCard = screen.getByRole('heading', { name: '月度预算' }).closest('section') as HTMLElement;
+  expect(budgetCard).toHaveTextContent('¥2,460.00');
+  expect(budgetCard).toHaveTextContent('当月日均预算');
+
+  fireEvent.click(screen.getByRole('button', { name: '必要支出' }));
+  fireEvent.change(screen.getByPlaceholderText('0.00'), { target: { value: '40' } });
+  fireEvent.change(screen.getByPlaceholderText('备注'), { target: { value: '买菜' } });
+  fireEvent.click(screen.getByRole('button', { name: '记一笔' }));
+  expect(screen.getByRole('status')).toHaveTextContent('并累加到本月已用预算');
+  expect(budgetCard).toHaveTextContent('¥2,500.00');
+
+  fireEvent.click(screen.getByRole('button', { name: /全部账单（7）/ }));
+  const billsCard = screen.getByRole('heading', { name: /全部账单/ }).closest('section') as HTMLElement;
+  expect(billsCard).toHaveTextContent('买菜');
+  fireEvent.change(within(billsCard).getByPlaceholderText('搜索备注'), { target: { value: '买菜' } });
+  expect(within(billsCard).getByText('买菜')).toBeInTheDocument();
+  expect(within(billsCard).queryByText('本月工资')).not.toBeInTheDocument();
+});
+
+test('edits and deletes bill rows from the all-bills list', () => {
+  render(<App />);
+  fireEvent.click(screen.getByRole('button', { name: '财务' }));
+  fireEvent.click(screen.getByRole('button', { name: /全部账单（6）/ }));
+  const billsCard = screen.getByRole('heading', { name: /全部账单/ }).closest('section') as HTMLElement;
+
+  fireEvent.click(within(billsCard).getByRole('button', { name: '删除账单 交通充值' }));
+  expect(screen.getByRole('status')).toHaveTextContent('已删除账单「交通充值」');
+  expect(within(billsCard).queryByText('交通充值')).not.toBeInTheDocument();
+
+  fireEvent.click(within(billsCard).getByRole('button', { name: '编辑账单 超市采购' }));
+  fireEvent.change(within(billsCard).getByLabelText('账单备注'), { target: { value: '超市采购（改）' } });
+  fireEvent.change(within(billsCard).getByLabelText('账单金额'), { target: { value: '300' } });
+  fireEvent.click(within(billsCard).getByRole('button', { name: '保存' }));
+  expect(screen.getByRole('status')).toHaveTextContent('账单已更新');
+  expect(within(billsCard).getByText('超市采购（改）')).toBeInTheDocument();
+  expect(within(billsCard).getByText('-¥300.00')).toBeInTheDocument();
+});
+
+test('deleting necessary bills reduces the used budget back to zero', () => {
+  render(<App />);
+  fireEvent.click(screen.getByRole('button', { name: '财务' }));
+  const budgetCard = screen.getByRole('heading', { name: '月度预算' }).closest('section') as HTMLElement;
+  expect(budgetCard).toHaveTextContent('¥2,460.00');
+  fireEvent.click(screen.getByRole('button', { name: /全部账单（6）/ }));
+  const billsCard = screen.getByRole('heading', { name: /全部账单/ }).closest('section') as HTMLElement;
+
+  fireEvent.click(within(billsCard).getByRole('button', { name: '删除账单 房租' }));
+  expect(budgetCard).toHaveTextContent('¥460.00');
+
+  for (const note of ['买猫粮 · 宠物耗材', '午餐 · 工作餐', '交通充值', '超市采购']) {
+    fireEvent.click(within(billsCard).getByRole('button', { name: `删除账单 ${note}` }));
+  }
+  expect(budgetCard).toHaveTextContent('¥0.00');
+});
+
+test('previews due subscriptions and manages the full list at the bottom', () => {
+  render(<App />);
+  fireEvent.click(screen.getByRole('button', { name: '财务' }));
+  const preview = screen.getByRole('heading', { name: /周期订阅预警/ }).closest('section') as HTMLElement;
+  expect(preview).toHaveClass('alert-crimson');
+  expect(within(preview).getByText('今天扣费')).toBeInTheDocument();
+  expect(within(preview).queryByRole('button', { name: '添加订阅' })).not.toBeInTheDocument();
+
+  const manager = screen.getByRole('heading', { name: /周期订阅管理/ }).closest('section') as HTMLElement;
+  fireEvent.change(within(manager).getByLabelText('订阅名称'), { target: { value: 'Netflix' } });
+  fireEvent.change(within(manager).getByLabelText('订阅金额'), { target: { value: '30' } });
+  fireEvent.change(within(manager).getByLabelText('下次扣费日期'), { target: { value: '2999-10-20' } });
+  fireEvent.click(within(manager).getByRole('button', { name: '添加订阅' }));
+  expect(screen.getByRole('status')).toHaveTextContent('已添加订阅「Netflix」');
+  expect(within(manager).getByText('Netflix')).toBeInTheDocument();
+  expect(within(preview).queryByText('Netflix')).not.toBeInTheDocument();
+
+  fireEvent.click(within(manager).getByRole('button', { name: '编辑订阅 Netflix' }));
+  fireEvent.change(within(manager).getByLabelText('编辑订阅金额'), { target: { value: '45' } });
+  fireEvent.click(within(manager).getByRole('button', { name: '保存' }));
+  expect(within(manager).getByText('¥45.00')).toBeInTheDocument();
+
+  fireEvent.click(within(manager).getByRole('button', { name: '删除订阅 Netflix' }));
+  expect(within(manager).queryByText('Netflix')).not.toBeInTheDocument();
+});
+
+test('records income through the plus sign without consuming the budget', () => {
+  render(<App />);
+  fireEvent.click(screen.getByRole('button', { name: '财务' }));
+  const budgetCard = screen.getByRole('heading', { name: '月度预算' }).closest('section') as HTMLElement;
+
+  fireEvent.click(screen.getByRole('button', { name: '收入' }));
+  expect(screen.getByRole('button', { name: '必要支出' })).toBeDisabled();
+  fireEvent.change(screen.getByPlaceholderText('0.00'), { target: { value: '200' } });
+  fireEvent.change(screen.getByPlaceholderText('备注'), { target: { value: '稿费' } });
+  fireEvent.click(screen.getByRole('button', { name: '记一笔' }));
+  expect(screen.getByRole('status')).toHaveTextContent('收入已记录');
+  expect(budgetCard).toHaveTextContent('¥2,460.00');
+});
+
+test('intercepts wardrobe spending until one item is released', () => {
+  render(<App />);
+  fireEvent.click(screen.getByRole('button', { name: '财务' }));
+  const budgetCard = screen.getByRole('heading', { name: '月度预算' }).closest('section') as HTMLElement;
+
+  fireEvent.change(screen.getByPlaceholderText('0.00'), { target: { value: '200' } });
+  fireEvent.change(screen.getByPlaceholderText('备注'), { target: { value: '买新外套' } });
+  fireEvent.click(screen.getByRole('button', { name: '记一笔' }));
+  const panel = screen.getByRole('region', { name: '一进一出拦截' });
+  expect(panel).toHaveTextContent('买新外套');
+  expect(budgetCard).toHaveTextContent('¥2,460.00');
+  expect(screen.getByRole('button', { name: '记一笔' })).toBeDisabled();
+
+  fireEvent.click(within(panel).getByRole('button', { name: '清理 净水器滤芯 并记账' }));
+  expect(screen.getByRole('status')).toHaveTextContent('一进一出完成');
+  expect(budgetCard).toHaveTextContent('¥2,660.00');
+  expect(screen.queryByRole('region', { name: '一进一出拦截' })).not.toBeInTheDocument();
+});
+
+test('approves or rejects each queued non-essential expense', () => {
+  render(<App />);
+  fireEvent.click(screen.getByRole('button', { name: '财务' }));
+  const budgetCard = screen.getByRole('heading', { name: '月度预算' }).closest('section') as HTMLElement;
+  const pendingCard = screen.getByRole('heading', { name: /非必要支出待评估队列/ }).closest('section') as HTMLElement;
+  expect(within(pendingCard).getByText(/蓝牙耳机/)).toBeInTheDocument();
+  expect(budgetCard).toHaveTextContent('¥2,460.00');
+  expect(screen.getByRole('button', { name: /全部账单（6）/ })).toBeInTheDocument();
+
+  fireEvent.click(within(pendingCard).getByRole('button', { name: '通过 蓝牙耳机（想换新的，非必需）' }));
+  expect(screen.getByRole('status')).toHaveTextContent('已通过');
+  expect(budgetCard).toHaveTextContent('¥2,588.00');
+  expect(within(pendingCard).queryByText(/蓝牙耳机/)).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /全部账单（7）/ })).toBeInTheDocument();
+
+  fireEvent.click(within(pendingCard).getByRole('button', { name: '拒绝 周末电影' }));
+  expect(screen.getByRole('status')).toHaveTextContent('已拒绝');
+  expect(within(pendingCard).queryByText(/周末电影/)).not.toBeInTheDocument();
+  expect(budgetCard).toHaveTextContent('¥2,588.00');
+  expect(screen.getByRole('button', { name: /全部账单（7）/ })).toBeInTheDocument();
+});
+
+test('clears persisted finance data from the toolbar', () => {
+  render(<App />);
+  fireEvent.click(screen.getByRole('button', { name: '财务' }));
+  const budgetCard = screen.getByRole('heading', { name: '月度预算' }).closest('section') as HTMLElement;
+  expect(budgetCard).toHaveTextContent('¥2,460.00');
+
+  fireEvent.click(screen.getByRole('button', { name: '清空财务数据' }));
+  fireEvent.click(screen.getByRole('button', { name: '确认清空财务数据' }));
+  expect(screen.getByRole('status')).toHaveTextContent('财务数据已清空');
+  expect(budgetCard).toHaveTextContent('未设置月度预算');
+  expect(screen.getByRole('progressbar', { name: '500 元积累目标进度' })).toHaveAttribute('aria-valuenow', '0');
+  expect(screen.getByRole('button', { name: /全部账单（0）/ })).toBeInTheDocument();
+});
+
+test('steps the 500 yuan goal by one unit with plus and minus buttons', () => {
+  render(<App />);
+  fireEvent.click(screen.getByRole('button', { name: '财务' }));
+  const goalProgress = () => screen.getByRole('progressbar', { name: '500 元积累目标进度' });
+  expect(goalProgress()).toHaveAttribute('aria-valuenow', '1500');
   expect(screen.getByText(/750,000 \/ ¥1,500,000/)).toBeInTheDocument();
 
-  fireEvent.change(screen.getByPlaceholderText('本次变动份数'), { target: { value: '10' } });
-  fireEvent.click(screen.getByRole('button', { name: '增加进度' }));
-  expect(screen.getByRole('progressbar', { name: '500 元积累目标进度' })).toHaveAttribute('aria-valuenow', '1510');
-  expect(screen.getByRole('status')).toHaveTextContent('已增加 10 份（¥5,000）');
+  fireEvent.click(screen.getByRole('button', { name: '增加 1 份' }));
+  expect(goalProgress()).toHaveAttribute('aria-valuenow', '1501');
+  expect(screen.getByRole('status')).toHaveTextContent('已增加 1 份（¥500）');
 
-  fireEvent.change(screen.getByPlaceholderText('本次变动份数'), { target: { value: '1491' } });
-  fireEvent.click(screen.getByRole('button', { name: '增加进度' }));
-  expect(screen.getByRole('status')).toHaveTextContent('最多还可增加 1490 份');
-  expect(screen.getByRole('progressbar', { name: '500 元积累目标进度' })).toHaveAttribute('aria-valuenow', '1510');
-
-  fireEvent.change(screen.getByPlaceholderText('本次变动份数'), { target: { value: '10' } });
-  fireEvent.click(screen.getByRole('button', { name: '减少进度' }));
-  expect(screen.getByRole('progressbar', { name: '500 元积累目标进度' })).toHaveAttribute('aria-valuenow', '1500');
-  expect(screen.getByRole('status')).toHaveTextContent('已减少 10 份（¥5,000）');
-
-  fireEvent.change(screen.getByPlaceholderText('本次变动份数'), { target: { value: '1501' } });
-  fireEvent.click(screen.getByRole('button', { name: '减少进度' }));
-  expect(screen.getByRole('status')).toHaveTextContent('最多可减少 1500 份');
-  expect(screen.getByRole('progressbar', { name: '500 元积累目标进度' })).toHaveAttribute('aria-valuenow', '1500');
+  fireEvent.click(screen.getByRole('button', { name: '减少 1 份' }));
+  expect(goalProgress()).toHaveAttribute('aria-valuenow', '1500');
+  expect(screen.getByRole('status')).toHaveTextContent('已减少 1 份（¥500）');
+  expect(screen.queryByPlaceholderText('本次变动份数')).not.toBeInTheDocument();
 });
 
 test('edits and cancels the monthly budget in place', () => {
