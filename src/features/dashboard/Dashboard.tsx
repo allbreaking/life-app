@@ -1,11 +1,24 @@
 import { useDomainResource } from '../../shared/ipc/useDomainResource';
 import { dailyTodosSchema, initialDailyOutput, initialDailyTasks } from './dailyTodos';
 import { DailyTodoCard } from './DailyTodoCard';
+import { TodayAgenda } from './TodayAgenda';
+import { foodSchema, initialFoods } from '../items/itemModel';
+import { budgetCentsSchema, initialBudgetCents, initialSpentCents, spentCentsSchema } from '../finance/financeModel';
+import { initialPeople, peopleSchema } from '../network/networkModel';
+import { aggregateAlerts, aggregateImportantDates, alertCardTone } from './dashboardModel';
 
-/** Side effects: persists the two daily todo lists through typed IPC. */
+/** Side effects: persists the two daily todo lists and reads other modules for read-only aggregation. */
 export function Dashboard() {
   const [dailyOutput, setDailyOutput] = useDomainResource('dashboard.dailyOutput', dailyTodosSchema, initialDailyOutput);
   const [dailyTasks, setDailyTasks] = useDomainResource('dashboard.dailyTasks', dailyTodosSchema, initialDailyTasks);
+  const [foods] = useDomainResource('items.foods', foodSchema, initialFoods);
+  const [budgetCents] = useDomainResource('finance.budgetCents', budgetCentsSchema, initialBudgetCents);
+  const [spentCents] = useDomainResource('finance.spentCents', spentCentsSchema, initialSpentCents);
+  const [people] = useDomainResource('network.people', peopleSchema, initialPeople);
+
+  const alerts = aggregateAlerts({ foods, budgetCents, spentCents, people });
+  const importantDates = aggregateImportantDates(people);
+  const alertTone = alertCardTone(alerts);
 
   const dailyCards = (
     <div className="grid grid-2 dashboard-secondary">
@@ -14,42 +27,32 @@ export function Dashboard() {
     </div>
   );
 
-  if (import.meta.env.PROD) return (
-    <div className="dashboard-view">
-      <section className="card">
-        <h2><span>▣ 今日待办</span></h2>
-        <p className="small">今日暂无待办</p>
-      </section>
-      {dailyCards}
-    </div>
-  );
-
   return (
     <div className="dashboard-view">
-      <section className="card north-star-card">
-        <div className="card-kicker"><span aria-hidden="true">⌾</span> 本月北极星</div>
-        <strong>完成 Life-OS 核心机制交付，减少一切伪需求打扰</strong>
-        <p className="small">原则提示：倒过来想，总是倒过来想。</p>
-      </section>
+      {!import.meta.env.PROD && (
+        <section className="card north-star-card">
+          <div className="card-kicker"><span aria-hidden="true">⌾</span> 本月北极星</div>
+          <strong>完成 Life-OS 核心机制交付，减少一切伪需求打扰</strong>
+          <p className="small">原则提示：倒过来想，总是倒过来想。</p>
+        </section>
+      )}
 
-      <section className="card">
-        <h2><span>▣ 今日待办</span></h2>
-        <p className="small">今日暂无待办</p>
-      </section>
+      <TodayAgenda />
 
       {dailyCards}
 
       <div className="grid grid-2 dashboard-secondary">
-        <section className="card alert-crimson">
+        <section className={alertTone ? `card alert-${alertTone}` : 'card'}>
           <h2 className="alert-title"><span aria-hidden="true">△</span> 预警聚合</h2>
-          <DataRow label="猫粮预计 3 天后耗尽"><Chip tone="amber">物品</Chip></DataRow>
-          <DataRow label="本月预算已用 82%"><Chip tone="amber">财务</Chip></DataRow>
-          <DataRow label="600519 触及安全价"><Chip tone="crimson">投资</Chip></DataRow>
+          {alerts.length === 0 ? <p className="small">暂无预警</p> : alerts.map((alert) => (
+            <DataRow key={alert.id} label={alert.label}><Chip tone={alert.tone}>{alert.module}</Chip></DataRow>
+          ))}
         </section>
         <section className="card">
           <h2>即将到来的重要日期</h2>
-          <DataRow label="老王 生日"><Chip tone="amber">3 天后</Chip></DataRow>
-          <DataRow label="妈妈 体检复诊"><Chip tone="sky">9 天后</Chip></DataRow>
+          {importantDates.length === 0 ? <p className="small">暂无重要日期</p> : importantDates.map((date) => (
+            <DataRow key={date.id} label={date.label} />
+          ))}
         </section>
       </div>
     </div>
@@ -57,7 +60,7 @@ export function Dashboard() {
 }
 
 /** Side effects: none. */
-function DataRow({ label, children }: { label: string; children: React.ReactNode }) {
+function DataRow({ label, children }: { label: string; children?: React.ReactNode }) {
   return <div className="data-row"><span>{label}</span>{children}</div>;
 }
 

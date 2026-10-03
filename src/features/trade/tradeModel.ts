@@ -1,9 +1,14 @@
+import { z } from 'zod';
+
 export type PriceAlert = 'target' | 'safety' | 'watching';
 export type WatchFilter = 'all' | PriceAlert;
 export type WatchRatingKey = 'businessModelRating' | 'profitabilityRating' | 'financialStabilityRating' | 'cashFlowRating';
 export type WatchRatingSort = { key: WatchRatingKey; direction: 'asc' | 'desc' } | null;
 
 type WatchPriceState = { current: number; target: number; safety: number; tags?: readonly string[] };
+
+export type WatchRatings = Partial<Record<WatchRatingKey, number>>;
+export type Watch = { id: string; code: string; name: string; optimisticTarget: number; target: number; pessimisticTarget: number; safety: number; current: number; tags: string[]; quoteAt?: string; createdAt?: string } & WatchRatings;
 
 export type WatchPage<T> = {
   items: T[];
@@ -158,3 +163,32 @@ export function halfPositionReductionPrice(cost: number, safety: number): number
   if (!Number.isFinite(cost) || cost <= 0 || !Number.isFinite(safety) || safety < 0 || cost <= safety) return null;
   return (2 * cost) - safety;
 }
+
+/** Side effects: none. Single watch rating dimension, 0–5 or absent. */
+export const watchRatingSchema = z.number().int().min(0).max(5).optional();
+
+/** Side effects: none. Parses and normalizes the persisted watchlist resource; legacy fields are tolerated on read. */
+export const watchSchema = z.array(z.object({
+  id: z.string().min(1).max(100),
+  code: z.string().regex(/^[A-Za-z0-9._-]{1,16}$/),
+  name: z.string().min(1).max(100),
+  optimisticTarget: z.number().positive().optional(),
+  target: z.number().positive(),
+  pessimisticTarget: z.number().positive().optional(),
+  safety: z.number().nonnegative(),
+  current: z.number().nonnegative(),
+  tags: z.array(z.string().trim().min(1).max(20)).max(10).optional(),
+  businessModelRating: watchRatingSchema,
+  profitabilityRating: watchRatingSchema,
+  financialStabilityRating: watchRatingSchema,
+  cashFlowRating: watchRatingSchema,
+  cashFlowDividendRating: watchRatingSchema,
+  valuationRating: watchRatingSchema,
+  quoteAt: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/).optional(),
+  createdAt: z.string().datetime().optional(),
+}).strict().transform(normalizeWatch).refine((item) => isValidTargetRange(item.optimisticTarget, item.target, item.pessimisticTarget, item.safety), '观察列表价格关系无效'));
+
+export const initialWatch: Watch[] = import.meta.env.PROD ? [] : [
+  { id: 'w1', code: '600519', name: '贵州茅台', optimisticTarget: 1800, target: 1680, pessimisticTarget: 1550, safety: 1450, current: 1442, tags: ['消费', '核心资产'], businessModelRating: 5, profitabilityRating: 5, financialStabilityRating: 5, cashFlowRating: 5, createdAt: '2026-08-28T08:00:00.000Z' },
+  { id: 'w2', code: '002230', name: '科大讯飞', optimisticTarget: 45, target: 40, pessimisticTarget: 36, safety: 34, current: 41.2, tags: ['AI'], businessModelRating: 3, profitabilityRating: 2, financialStabilityRating: 3, cashFlowRating: 1, createdAt: '2026-08-29T08:00:00.000Z' },
+];
