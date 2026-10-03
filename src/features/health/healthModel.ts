@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const HEALTH_EVENT_TYPES = ['皮肤', '肠胃', '牙齿'] as const;
+export const HEALTH_EVENT_TYPES = ['皮肤', '肠胃', '牙齿', '用药', '其他身体状况'] as const;
 export type HealthEventType = (typeof HEALTH_EVENT_TYPES)[number];
 
 export const HEALTH_MOODS = ['happy', 'anxious', 'neutral', 'sad'] as const;
@@ -15,6 +15,8 @@ export const HEALTH_EVENT_PRESETS: Record<HealthEventType, string[]> = {
   皮肤: ['新痘', '痘印', '泛红', '凹陷', '干燥'],
   肠胃: ['腹胀', '腹痛', '腹泻', '便秘', '反酸'],
   牙齿: ['疼痛', '咀嚼不适', '敏感', '治疗', '复诊'],
+  用药: ['处方药', '非处方药', '中药', '保健品', '忘记服药'],
+  其他身体状况: ['发烧', '头痛', '乏力', '过敏', '不适'],
 };
 
 export type HealthEvent = { type: HealthEventType; label: string; note: string };
@@ -98,9 +100,14 @@ export function moodLabel(mood: string): string {
   return normalized ? MOOD_LABELS[normalized] : '未记录';
 }
 
-/** Side effects: none. Body-event visual class for 皮肤/肠胃/牙齿. */
-export function healthEventClassName(type: string): 'skin' | 'gut' | 'tooth' | '' {
-  return type === '皮肤' ? 'skin' : type === '肠胃' ? 'gut' : type === '牙齿' ? 'tooth' : '';
+/** Side effects: none. Body-event visual class for 皮肤/肠胃/牙齿/用药/其他身体状况. */
+export function healthEventClassName(type: string): 'skin' | 'gut' | 'tooth' | 'medicine' | 'other' | '' {
+  if (type === '皮肤') return 'skin';
+  if (type === '肠胃') return 'gut';
+  if (type === '牙齿') return 'tooth';
+  if (type === '用药') return 'medicine';
+  if (type === '其他身体状况') return 'other';
+  return '';
 }
 
 /** Side effects: none. A record counts as filled when weather, sleep pair and mood are all present. */

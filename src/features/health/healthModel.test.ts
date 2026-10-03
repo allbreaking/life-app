@@ -41,6 +41,8 @@ describe('health visual helpers', () => {
     expect(healthEventClassName('皮肤')).toBe('skin');
     expect(healthEventClassName('肠胃')).toBe('gut');
     expect(healthEventClassName('牙齿')).toBe('tooth');
+    expect(healthEventClassName('用药')).toBe('medicine');
+    expect(healthEventClassName('其他身体状况')).toBe('other');
     expect(healthEventClassName('其他')).toBe('');
   });
 });
